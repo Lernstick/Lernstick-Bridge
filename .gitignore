@@ -1,0 +1,8 @@
+.env
+sql_app.db
+client-*
+tpm_cert_store/
+venv/
+.mypy_cache/
+.idea/
+*.pyc
