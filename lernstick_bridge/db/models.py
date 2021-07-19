@@ -3,14 +3,14 @@ SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
 
-from sqlalchemy import Column, String, ForeignKey
+from sqlalchemy import Column, String, DateTime
 
 from lernstick_bridge.db.database import Base
 
 class Device(Base):
     __tablename__ = "devices"
 
-    id = Column(String, primary_key=True, index=True)
+    id = Column(String, primary_key=True, index=True)  # Is in our case the ek_cert hashed
     ek_cert = Column(String, nullable=False)  # The hardware vendor cert for the TPM
     # BIOS & UEFI related PCRs should be in general stable
     # Bootloader and Mok entries are getting validated via Keylime policies
@@ -25,19 +25,12 @@ class Device(Base):
     # Reference of the boot event log. Used for improving the measured boot policies
     event_log_reference = Column(String, nullable=True)
 
-class Tokens(Base):
-    __tablename__ = "tokens"
-    token = Column(String, primary_key=True, index=True)
-    device = Column(String, ForeignKey("devices.id"))
 
-"""
-class ActiveDevices(Base):
-    __tablename__ = "active_devices"
-"""
-
-"""
 class ActiveDevice(Base):
     __tablename__ = "active_devices"
-    id = ForeignKey()
-    activated = Column(Boolean)
-"""
+    device_id = Column(String, primary_key=True, index=True)
+    token = Column(String, unique=True, index=True)  # Tokens are assumed to be be unique so we enforce that in the database
+    timeout = Column(DateTime, nullable=True)  # If timeout is NULL it means that the device is always valid.
+
+
+

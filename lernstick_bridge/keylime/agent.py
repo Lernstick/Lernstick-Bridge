@@ -17,11 +17,11 @@ import subprocess
 from tempfile import NamedTemporaryFile
 
 from lernstick_bridge.schema.keylime import Payload
-from lernstick_bridge.keylime import keylime_crypto
+from lernstick_bridge.keylime import util
 
 
 def do_quote(agent_url: str, aik: str):
-    nonce = keylime_crypto.get_random_nonce()  # TODO random 20 char pw
+    nonce = util.get_random_nonce()  # TODO random 20 char pw
     ret = requests.get(f"{agent_url}/quotes/identity?nonce={nonce}")
     if ret.status_code != 200:
         # TODO
@@ -48,7 +48,7 @@ def do_quote(agent_url: str, aik: str):
     pcr_val = zlib.decompress(base64.b64decode(quote_vals[2]))
 
     quote_valid = _check_qoute(aik, quote_val, sig_val, pcr_val, nonce, hash_alg)
-    return quote_valid
+    return quote_valid, results["pubkey"]
 
 
 def _check_qoute(aik: bytes, quote_data: bytes, signature_data: bytes, pcr_data: bytes, nonce: str, hash_alg: str):
@@ -99,12 +99,20 @@ def get_pubkey(agent_url: str):
     return cryptography.hazmat.primitives.serialization.load_pem_public_key(data["results"]["pubkey"].encode("utf-8"))
 
 
-def post_payload_u(agent_id, agent_url, payload: Payload):
-    auth_tag = keylime_crypto.do_hmac(payload.k, agent_id)
-    key = get_pubkey(agent_url)
+def post_payload_u(agent_id, agent_url, payload: Payload, key=None):
+    """
+    Posts the encrypted payload and the u key to the agent
+    :param agent_id: The uuid of the agent
+    :param agent_url: The url where we can contact the agent
+    :param payload: The payload to post
+    :param key: Public RSA key for encrypting the u key.
+    :return: True if it was successful
+    """
+    auth_tag = util.do_hmac(payload.k, agent_id)
+    if key is None:
+        key = get_pubkey(agent_url)
     data = {'auth_tag': auth_tag,
-            'encrypted_key': base64.b64encode(keylime_crypto.rsa_encrypt(key, payload.u)).decode("utf-8"),
+            'encrypted_key': base64.b64encode(util.rsa_encrypt(key, payload.u)).decode("utf-8"),
             'payload': payload.encrypted_data}
-    print(data)
     res = requests.post(f"{agent_url}/v2/keys/ukey", data=json.dumps(data))
     return res.status_code == 200

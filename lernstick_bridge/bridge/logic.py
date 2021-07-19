@@ -3,10 +3,27 @@ SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
 
-from lernstick_bridge.schema import bridge
+import lernstick_bridge.bridge.agent
+from lernstick_bridge.config import config
+from lernstick_bridge.db import crud
+from lernstick_bridge.keylime import verifier
 
 
-def strict_activate_device(device_id: str):
+def activate_device(device_id: str):
+    if config.mode == "strict":
+        return _strict_activate_device(device_id)
+    elif config.mode == "relaxed":
+        return _relaxed_activate_device(device_id)
+    return False
+
+
+def deactivate_device(device_id: str):
+    if config.mode == "strict":
+        return _strict_deactivate_device(device_id)
+    return False
+
+
+def _strict_activate_device(device_id: str):
     """
     Try to add a device for remote attestation
     :param device_id:
@@ -25,7 +42,7 @@ def strict_activate_device(device_id: str):
         - Mark the device as active in the database
     """
     try:
-        agent = bridge.Agent(device_id, strict=True)
+        agent = lernstick_bridge.bridge.agent.Agent(device_id, strict=True)
     except ValueError:
         return None
 
@@ -35,4 +52,37 @@ def strict_activate_device(device_id: str):
     if not agent.do_qoute():
         return None
 
+    token = agent.deploy_token()
+    if token is None:
+        return None
+
+    if not agent.add_to_verifier():
+        agent.remove_from_verifier()
+        return None
+
+    crud.add_active_device(agent.id, token.token)
+
     return True
+
+def _relaxed_activate_device(device_id: str):
+    """
+    Activates device in relaxed mode.
+    :param device_id:
+    :return:
+
+    Steps:
+        - Check if device is there
+        - If not re add it to attestation
+        - Remove timeout from attestation
+    """
+    pass
+
+
+def _strict_deactivate_device(device_id: str):
+    if not crud.get_active_device(device_id):
+        return False  # TODO should be a not found
+
+    verifier.delete_device(device_id)
+    crud.delete_active_device(device_id)
+    return True
+

@@ -5,14 +5,14 @@ Copyright 2021 Thore Sommer
 from lernstick_bridge.schema.config import Config
 from lernstick_bridge.keylime import ek
 from lernstick_bridge.db.database import SessionLocal
+from sqlalchemy.orm import Session
+
 config = Config()
 
-def get_db():
+
+def get_db() -> Session:
     db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    return db
 
 
 cert_store = ek.create_ca_store(config.tpm_cert_store)

@@ -7,10 +7,9 @@ Copyright 2021 Thore Sommer
 
 import json
 from pydantic import BaseModel
-from typing import Dict, List, Optional
 from ipaddress import IPv4Address
 
-from lernstick_bridge.bridge.config import config
+from lernstick_bridge.config import config
 
 
 class AgentRegistrar(BaseModel):
@@ -35,12 +34,12 @@ class DeviceVerifierRequest(BaseModel):
     cloudagent_ip: IPv4Address
     cloudagent_port: int
     tpm_policy: str
-    vtpm_policy: str
+    vtpm_policy: str = json.dumps({"mask": "0x000000"})  # We don't use vtpms so just always add an empty mask
     metadata: str = json.dumps({})
     allowlist: str = json.dumps({})
     mb_refstate: str = None
     ima_sign_verification_keys: str = json.dumps([])
-    revocation_key: str = ""
+    revocation_key: str = ""  # We don't use the revocation feature, so we specify always an empty string
     accept_tpm_hash_algs: str = json.dumps(config.tenant.accept_tpm_hash_algs)
     accept_tpm_encryption_algs: str = json.dumps(config.tenant.accept_tpm_encryption_algs)
     accept_tpm_signing_algs: str = json.dumps(config.tenant.accept_tpm_signing_algs)

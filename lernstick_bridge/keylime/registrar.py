@@ -5,7 +5,7 @@ Copyright 2021 Thore Sommer
 
 import requests
 from lernstick_bridge.schema.keylime import AgentRegistrar
-from lernstick_bridge.bridge.config import config, REGISTRAR_URL
+from lernstick_bridge.config import config, REGISTRAR_URL
 
 # TODO don't disable SSL Cert validation
 session = requests.Session()

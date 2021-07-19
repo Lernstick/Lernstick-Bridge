@@ -3,7 +3,7 @@ SPDX-License-Identifier: Apache-2.0
 Copyright 2017 Massachusetts Institute of Technology.
 Copyrigyt 2021 Thore Sommer
 '''
-
+# Keylime specific crypto and other utility functions.
 # Some code is nearly the same as in Keylime which is Apache 2.0
 import base64
 import hashlib
@@ -17,11 +17,16 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import (Cipher, algorithms, modes)
 
 from lernstick_bridge.schema.keylime import Payload
-
+from lernstick_bridge.config import config
 AES_BLOCK_SIZE = 16
 
 
-def generate_payload(input: str):
+def generate_payload(input: str) -> Payload:
+    """
+    Generates a payload from given input string
+    :param input: input string
+    :return: Payload object
+    """
     k = generate_random_key(32)
     v = generate_random_key(32)
     u = _bitwise_xor(k, v)
@@ -63,6 +68,7 @@ def _encrypt(input: str, key: bytes):
     :param input: to encrypt
     :param key: for encryption
     :return: Then encrypted input base64 encoded
+    Note: This function is imported from Keylime
     """
     iv = generate_random_key(AES_BLOCK_SIZE)
     encryptor = Cipher(algorithms.AES(key), modes.GCM(
@@ -71,9 +77,35 @@ def _encrypt(input: str, key: bytes):
     return base64.b64encode(iv + encrypted_input + encryptor.tag)
 
 
-def rsa_encrypt(key, message):
-    """ RSA encrypt message  """
+def rsa_encrypt(key, message: bytes) -> bytes:
+    """
+    Encrypts an message with a RSA key.
+    Is used for the payload mechanism.
+    :param key: RSA key to encrypt with
+    :param message: to encrypt
+    :return: encrypted message
+    Note: This function is imported from Keylime
+    """
     return key.encrypt(bytes(message),
                        cryptography.hazmat.primitives.asymmetric.padding.OAEP(mgf=cryptography.hazmat.primitives.asymmetric.padding.MGF1(algorithm=hashes.SHA1()),
                                                                               algorithm=hashes.SHA1(),
                                                                               label=None))
+
+
+def generate_mask(tpm_policy: dict = {}, measured_boot: bool = True, ima: bool = True):
+    """
+    Generates the mask needed for all the checked pcrs
+    :param tpm_policy: static tpm policy
+    :param measured_boot: enable pcrs for measured boot
+    :param ima: enable pcr for IMA
+    :return: mask for enabling that features
+    """
+    pcrs = list(tpm_policy.keys())
+    if measured_boot:
+        pcrs += config.tenant.measuredboot_pcrs
+    if ima:
+        pcrs += config.tenant.ima_pcrs
+    out = 0
+    for i in set(pcrs):
+        out = out | (1 << int(i))
+    return hex(out)
