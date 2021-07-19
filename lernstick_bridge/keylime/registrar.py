@@ -23,6 +23,13 @@ def get_device(device_id: str):
     return AgentRegistrar(**data["results"])
 
 
+def get_devices():
+    res = session.get(f"{REGISTRAR_URL}/agents")
+    if res.status_code != 200:
+        return None
+    return res.json()["results"]["uuids"]
+
+
 def delete_device(device_id: str):
     res = session.delete(f"{REGISTRAR_URL}/agents/{device_id}")
     return res.status_code == 200

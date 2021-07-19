@@ -2,13 +2,17 @@
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
+import time
+
 from fastapi import FastAPI, HTTPException
+from starlette.concurrency import run_in_threadpool
+from asyncio import ensure_future
 from typing import List
 
 from lernstick_bridge.db import models, crud
 from lernstick_bridge.schema import bridge
-from lernstick_bridge.db.database import engine
-from lernstick_bridge.config import get_db, config, cert_store
+from lernstick_bridge.db.database import engine, get_db
+from lernstick_bridge.config import config, cert_store
 from lernstick_bridge.bridge import logic
 from lernstick_bridge.keylime import ek
 
@@ -85,3 +89,8 @@ def cleanup():
 
     # Close database connection
     get_db().close()
+
+@app.on_event("startup")
+async def startup():
+    if config.mode == "relaxed":
+        await logic.relaxed_loop()

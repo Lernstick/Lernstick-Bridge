@@ -50,7 +50,7 @@ class Agent(BaseModel):
         if self.strict:
             return self.device.ek_cert == self.registrar_data.ekcert
 
-        return ek.validate_ek(self.registrar_data.ekcert.encode(), config.cert_store)
+        return ek.validate_ek(base64.b64decode(self.registrar_data.ekcert), config.cert_store)
 
     def do_qoute(self):
         valid, pubkey = agent.do_quote(self.get_url(), self.registrar_data.aik_tpm)
@@ -84,6 +84,9 @@ class Agent(BaseModel):
 
     def remove_from_verifier(self):
         return verifier.delete_device(self.id)
+
+    def activate(self, timeout=None):
+        crud.add_active_device(self.id, self._token.token, timeout)
 
     def _get_tpm_policy(self):
         output = {}

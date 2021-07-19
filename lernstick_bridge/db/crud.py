@@ -8,7 +8,7 @@ from typing import List
 
 from lernstick_bridge.db import models
 from lernstick_bridge.schema import bridge
-from lernstick_bridge.config import get_db
+from lernstick_bridge.db.database import get_db
 
 db = get_db()
 
@@ -59,7 +59,12 @@ def add_active_device(device_id: str, token: str, timeout=None):
 
 
 def set_timeout_active_device(device_id: str, timeout):
-    pass
+    device = db.query(models.ActiveDevice).filter(models.ActiveDevice.device_id == device_id).first()
+    if not device:
+        return False
+    device.timeout = timeout
+    db.commit()
+    return True
 
 
 def get_active_device(device_id: str):
@@ -69,7 +74,7 @@ def get_active_device(device_id: str):
     return device
 
 
-def get_active_devices():
+def get_active_devices() -> List[bridge.ActiveDevice]:
     devices = db.query(models.ActiveDevice).all()
     return parse_obj_as(List[bridge.ActiveDevice], devices)
 
