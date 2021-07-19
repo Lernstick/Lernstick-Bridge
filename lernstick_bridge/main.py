@@ -2,16 +2,12 @@
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
-import time
-
 from fastapi import FastAPI, HTTPException
-from starlette.concurrency import run_in_threadpool
-from asyncio import ensure_future
 from typing import List
 
 from lernstick_bridge.db import models, crud
 from lernstick_bridge.schema import bridge
-from lernstick_bridge.db.database import engine, get_db
+from lernstick_bridge.db.database import engine, db
 from lernstick_bridge.config import config, cert_store
 from lernstick_bridge.bridge import logic
 from lernstick_bridge.keylime import ek
@@ -60,7 +56,10 @@ def device_status(device_id: str):
     # TODO retive also state if active
     device = crud.get_active_device(device_id)
     if device:
-        return bridge.DeviceStatus(status="active", token=device.token)
+        status = "active"
+        if config.mode == "relaxed" and device.timeout is not None:
+            status = "auto-active"
+        return bridge.DeviceStatus(status=status, token=device.token)
     device_db = crud.get_device(device_id)
     if device_db:
         return bridge.DeviceStatus(status="inactive")
@@ -88,7 +87,8 @@ def cleanup():
         logic.deactivate_device(device.device_id)
 
     # Close database connection
-    get_db().close()
+    db.close()
+
 
 @app.on_event("startup")
 async def startup():

@@ -22,9 +22,6 @@ class AgentRegistrar(BaseModel):
     ip: IPv4Address
     port: int
 
-    def get_url(self):
-        return f"http://{self.ip}:{self.port}/{config.keylime_api_entrypoint}"
-
 
 class DeviceVerifierRequest(BaseModel):
     """

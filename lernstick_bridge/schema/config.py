@@ -8,21 +8,26 @@ from typing import List
 from pathlib import Path
 from pydantic import BaseSettings, BaseModel
 from datetime import timedelta
+
+
 class Tenant(BaseModel):
     accept_tpm_hash_algs: List[str] = ["sha512","sha384","sha256", "sha1"]
     accept_tpm_encryption_algs: List[str] = ["ecc", "rsa"]
     accept_tpm_signing_algs: List[str] = ["ecschnorr", "rsassa"]
     ima_pcrs: List[int] = [10]
     measuredboot_pcrs: List[int] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15] # TODO check if we actually need all
-    relaxed_timeout: timedelta = timedelta(seconds=20)
+    relaxed_timeout: timedelta = timedelta(seconds=60)
+
 
 class Verifier(BaseModel):
     tls_cert: str
     tls_priv_key: str
 
+
 class Registrar(BaseModel):
     tls_cert: str
     tls_priv_key: str
+
 
 class Config(BaseSettings):
     keylime_api_entrypoint: str = "v2"

@@ -2,15 +2,14 @@
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
+import datetime
 
 from pydantic import parse_obj_as
-from typing import List
+from typing import List, Optional
 
 from lernstick_bridge.db import models
 from lernstick_bridge.schema import bridge
-from lernstick_bridge.db.database import get_db
-
-db = get_db()
+from lernstick_bridge.db.database import db
 
 
 def get_device(device_id: str):
@@ -20,7 +19,7 @@ def get_device(device_id: str):
     return bridge.Device.from_orm(device)
 
 
-def get_devices():
+def get_devices() -> List[bridge.Device]:
     devices = db.query(models.Device).all()
     return parse_obj_as(List[bridge.Device], devices)
 
@@ -33,7 +32,7 @@ def add_device(device: bridge.Device):
     return db_device
 
 
-def delete_device(device_id: str):
+def delete_device(device_id: str) -> bool:
     device = get_device(device_id)
     db.delete(device)
     db.commit()
@@ -41,7 +40,7 @@ def delete_device(device_id: str):
 
 
 def update_device(device: bridge.Device):
-    pass
+    raise NotImplementedError()
 
 
 def add_active_device(device_id: str, token: str, timeout=None):
@@ -58,7 +57,7 @@ def add_active_device(device_id: str, token: str, timeout=None):
     return True
 
 
-def set_timeout_active_device(device_id: str, timeout):
+def set_timeout_active_device(device_id: str, timeout: Optional[datetime.datetime]) -> bool:
     device = db.query(models.ActiveDevice).filter(models.ActiveDevice.device_id == device_id).first()
     if not device:
         return False
@@ -67,11 +66,11 @@ def set_timeout_active_device(device_id: str, timeout):
     return True
 
 
-def get_active_device(device_id: str):
+def get_active_device(device_id: str) -> Optional[bridge.ActiveDevice]:
     device = db.query(models.ActiveDevice).filter(models.ActiveDevice.device_id == device_id).first()
     if not device:
         return None
-    return device
+    return bridge.ActiveDevice.from_orm(device)
 
 
 def get_active_devices() -> List[bridge.ActiveDevice]:
@@ -79,7 +78,7 @@ def get_active_devices() -> List[bridge.ActiveDevice]:
     return parse_obj_as(List[bridge.ActiveDevice], devices)
 
 
-def delete_active_device(device_id: str):
+def delete_active_device(device_id: str) -> bool:
     device = db.query(models.ActiveDevice).filter(models.ActiveDevice.device_id == device_id).first()
     if not device:
         return False
@@ -88,8 +87,8 @@ def delete_active_device(device_id: str):
     return True
 
 
-def get_token(token: str):
+def get_token(token: str) -> Optional[bridge.Token]:
     token = db.query(models.ActiveDevice).filter(models.ActiveDevice.token == token).first()
     if not token:
-        return False
+        return None
     return bridge.Token.from_orm(token)
