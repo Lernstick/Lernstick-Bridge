@@ -8,6 +8,7 @@ from typing import List
 from pathlib import Path
 from pydantic import BaseSettings, BaseModel
 from datetime import timedelta
+from ipaddress import IPv4Address
 
 
 class Tenant(BaseModel):
@@ -30,6 +31,8 @@ class Registrar(BaseModel):
 
 
 class Config(BaseSettings):
+    ip: IPv4Address = IPv4Address("127.0.0.1")
+    port: int = 8080
     keylime_api_entrypoint: str = "v2"
     keylime_registrar: str = "https://localhost:8891"
     keylime_verifier: str = "https://localhost:8881"

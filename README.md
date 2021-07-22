@@ -24,8 +24,11 @@ the device id from bridge. Then exam system activates that device for use at the
 Non manually activated devices that are active in the bridge are automatically removed after a configured time period.
 Manually activated devices must be removed by the exam system. 
 
-## Installation
-TODO
+## Deployment
+For easy deployment build docker image with: `sudo docker build -t lernstick-bridge -f docker/Dockerfile .`
+
+Python dependencies are listed in `requirements.txt`, `tpm2-pytss` needs the headers with all its dependencies for 
+`tpm2-tss` and a recent version `tpm2-tools` is needed.
 
 ## Configuration
 Configuration is done using pydantic settings. The setting schema is specified in `lernstick_bridge/schema/config.py`. 
