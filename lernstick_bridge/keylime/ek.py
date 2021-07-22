@@ -8,6 +8,7 @@ import glob
 import os
 from pathlib import Path
 
+import OpenSSL.crypto
 from OpenSSL.crypto import X509Store, \
     X509StoreContext, \
     X509StoreContextError, \
@@ -41,17 +42,20 @@ def create_ca_store(path: Path) -> X509Store:
     cert_store = X509Store()
     if path is None:
         return cert_store
-    for file in glob.glob(os.path.join(path, "**/*.pem"), recursive=True):
-        with open(file, 'rb') as f:
-            cert = load_certificate(FILETYPE_PEM, f.read())
-            cert_store.add_cert(cert)
-    for file in glob.glob(os.path.join(path, "**/*.cer"), recursive=True):
-        with open(file, 'rb') as f:
-            cert = load_certificate(FILETYPE_ASN1, f.read())
-            cert_store.add_cert(cert)
-    for file in glob.glob(os.path.join(path, "**/*.crt"), recursive=True):
-        with open(file, 'rb') as f:
-            cert = load_certificate(FILETYPE_ASN1, f.read())
-            cert_store.add_cert(cert)
-
+    filetypes = ["pem", "cer", "crt"]
+    for ext in filetypes:
+        for file in glob.glob(os.path.join(path, f"**/*.{ext}"), recursive=True):
+            with open(file, 'rb') as f:
+                data = f.read()
+                cert = None
+                try:
+                    cert = load_certificate(FILETYPE_PEM, data)
+                except OpenSSL.crypto.Error:
+                    pass
+                try:
+                    cert = load_certificate(FILETYPE_ASN1, data)
+                except OpenSSL.crypto.Error:
+                    pass
+                if cert is not None:
+                    cert_store.add_cert(cert)
     return cert_store
