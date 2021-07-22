@@ -43,6 +43,9 @@ class DeviceVerifierRequest(BaseModel):
 
 
 class Payload(BaseModel):
+    """
+    Abstraction of the Payload that can be deployed to the agent.
+    """
     k: bytes
     u: bytes
     v: bytes

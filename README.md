@@ -5,25 +5,35 @@ It also provides device management and configuration of default values for Remot
 ## Modes
 The bridge can operate in two different modes, depending on the use case.
 
-### Strict verification
-In this mode devices must be in the database and registered at the Keylime Registrar,
-before the device is activated for Remote Attestation by the user.
-A token is deployed on the device. 
-This token can be used to verify that a user actually belongs to a device.
+### strict - Only allow known devices
+In this mode devices must be manually activated at the bridge.
+During activation the EK certificate of the TPM is checked against a known good one in the database and static PCR 
+values are taken into account during verification.
+After activation an identification token is deployed on the device. 
+This can be optionally used for additional verification. 
 
-The activated devices need to be manually removed by the bridge user.
-### Automatic registration and verification
-In this mode devices are automatically added to the Verifier if the TPM EK 
-is signed by one of the known hardware vendors. 
-Then a token is automatically released on the device. 
-This token is then used to identify a device.
-The user of the bridge needs to manually activate a device to signal 
-interest in that device otherwise it will be removed from the Verifier automatically
-after a specified time period.
+Activated devices mus be removed by the exam system.
+### relaxed - Verify devices only against TPM vendor EK certificate
+In this mode the bridge tries to activate the device automatically. 
+The only check that is done for this device is the validation of the TPMs EK against the Hardware Vendor CAs. 
+An identification token is automatically deployed on the device which the agent can decrypt once the verifier confirmed
+that the device is in a known good state.
+If the exam system wants to use a device it must first find the identification token on that device and then retrieve
+the device id from bridge. Then exam system activates that device for use at the bridge.
 
-The activated devices need to be manually removed by the bridge user.
+Non manually activated devices that are active in the bridge are automatically removed after a configured time period.
+Manually activated devices must be removed by the exam system. 
 
-## Design limitations
+## Installation
+TODO
+
+## Configuration
+Configuration is done using pydantic settings. The setting schema is specified in `lernstick_bridge/schema/config.py`. 
+More information can be found here: https://pydantic-docs.helpmanual.io/usage/settings/
+
+## Known design limitations
 * We allow only one valid generic Configuration for Keylime at a time. 
-  Allowing multiple configurations conflicts with idea of autoconfiguration. 
-  
+  Allowing multiple configurations conflicts with idea of autoconfiguration.
+* More granular reporting of the state of an agent is limited by the current capabilities of Keylime.
+* The device id is mapped to the EK cert.
+* The registrar, verifier and bridge need a route to conact the agent (Limitation of Keylime).

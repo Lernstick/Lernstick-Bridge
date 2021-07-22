@@ -14,7 +14,7 @@ from lernstick_bridge.db import crud
 from lernstick_bridge.keylime import verifier, registrar
 
 
-def activate_device(device_id: str):
+def activate_device(device_id: str) -> bool:
     if config.mode == "strict":
         return _strict_activate_device(device_id)
     elif config.mode == "relaxed":
@@ -22,7 +22,7 @@ def activate_device(device_id: str):
     return False
 
 
-def deactivate_device(device_id: str):
+def deactivate_device(device_id: str) -> bool:
     if config.mode == "strict":
         return _strict_deactivate_device(device_id)
     elif config.mode == "relaxed":
@@ -30,31 +30,20 @@ def deactivate_device(device_id: str):
     return False
 
 
-def _strict_activate_device(device_id: str):
+def _strict_activate_device(device_id: str) -> bool :
     """
     Try to add a device for remote attestation
     :param device_id:
     :return:
 
-    Steps
-        - Get data from DB and registrar
-        - Check if its actually there
-        - validate if the EK is actually the expected one
-        - Do a identity quote on the agent to retrieve public key
-        - Validate that quote to see if it matches the aik in the registrar
-        - Deploy U key and token (payload) to the agent
-        - Add token to database
-        - Add agent to the verifier
-        - (Optional check if the agent has got the V also key)
-        - Mark the device as active in the database
     """
     try:
         agent = Agent(device_id, strict=True)
     except ValueError:
-        return None
+        return False
 
     if not agent.valid_ek():
-        return None
+        return False
 
     if not agent.do_qoute():
         return None
@@ -102,12 +91,19 @@ def _relaxed_deactivate_device(device_id: str):
     return True
 
 
-def _relaxed_handle_devices():
+def _relaxed_handle_agents():
+    """
+     - Get's the agents from the registrar and tries to activate them.
+     - Checks if an active agent has reached its timeout and removes it.
+     Note: It also removes it from the registrar currently. The agent must register itself again if it should be activated.
+    :return: None
+    """
     active_devices = crud.get_active_devices()
     active_ids = set()
     for device in active_devices:
         active_ids.add(device.device_id)
     registrar_devices = registrar.get_devices()
+    # TODO This should be done in parallel and sequential so that a single device can block this loop
     for device_id in registrar_devices:
         if device_id in active_ids:
             continue
@@ -116,12 +112,20 @@ def _relaxed_handle_devices():
         except ValueError:
             continue
 
-        agent.valid_ek()
-        agent.do_qoute()
-        agent.deploy_token()
-        agent.add_to_verifier()
+        if not agent.valid_ek():
+            continue
+
+        if not agent.do_qoute():
+            continue
+
+        if not agent.deploy_token():
+            continue
+        if not agent.add_to_verifier():
+            continue
+
         timeout = datetime.datetime.now() + config.tenant.relaxed_timeout
-        agent.activate(timeout=timeout)
+        if not agent.activate(timeout=timeout):
+            continue
 
     for device in active_devices:
         if device.timeout is None:
@@ -132,13 +136,13 @@ def _relaxed_handle_devices():
         # We will delete also the device from the registrar. It has to be restarted in order to be added again.
         registrar.delete_device(device.device_id)
 
-    time.sleep(10)
+    time.sleep(10) # TODO make this configurable
 
 
 async def relaxed_loop():
-    """Initial PoC for an loop that automatically adds and removes devices"""
+    """Initial PoC for an loop that automatically adds and removes agents"""
     async def loop():
         while True:
-            await run_in_threadpool(_relaxed_handle_devices)
+            await run_in_threadpool(_relaxed_handle_agents)
 
     ensure_future(loop())

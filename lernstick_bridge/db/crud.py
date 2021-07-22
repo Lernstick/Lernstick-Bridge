@@ -7,13 +7,24 @@ import datetime
 from pydantic import parse_obj_as
 from typing import List, Optional
 
+from sqlalchemy.exc import SQLAlchemyError
+
 from lernstick_bridge.db import models
 from lernstick_bridge.schema import bridge
 from lernstick_bridge.db.database import db
 
 
-def get_device(device_id: str):
-    device = db.query(models.Device).filter(models.Device.id == device_id).first()
+def get_device(device_id: str) -> Optional[bridge.Device]:
+    """
+    Returns a device from the database
+    :param device_id: the device id
+    :return: the Device or None if not found
+    """
+    try:
+        device = db.query(models.Device).filter(models.Device.id == device_id).first()
+    except SQLAlchemyError as e:
+        return None
+
     if not device:
         return None
     return bridge.Device.from_orm(device)

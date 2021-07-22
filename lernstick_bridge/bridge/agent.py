@@ -4,6 +4,7 @@ Copyright 2021 Thore Sommer
 '''
 
 import base64
+import datetime
 import json
 from typing import Optional
 
@@ -27,7 +28,7 @@ class Agent(BaseModel):
     registrar_data: AgentRegistrar
 
     _token: Optional[Token] = PrivateAttr(None)
-    _pubkey: Optional[str] = PrivateAttr(None)  # TODO cache the public key instead of requesting it again
+    _pubkey: Optional[str] = PrivateAttr(None)  # Caching the pubkey to reduce requests to the agent
 
     def __init__(self, device_id: str, strict=True):
         registrar_data = registrar.get_device(device_id)
@@ -58,10 +59,18 @@ class Agent(BaseModel):
             self._pubkey = pubkey
         return valid
 
-    def get_url(self):
+    def get_url(self) -> str:
+        """
+        Construct agent contact url from IP and port
+        :return: string that is the agent contac url
+        """
         return f"http://{self.registrar_data.ip}:{self.registrar_data.port}"
 
-    def deploy_token(self):
+    def deploy_token(self) -> Token:
+        """
+        Deploys the verification token onto the agent
+        :return: The deployed token
+        """
         if not self._token:
             token = Token(self.id)
             payload = token.to_payload()
@@ -69,7 +78,11 @@ class Agent(BaseModel):
                 self._token = token
         return self._token
 
-    def add_to_verifier(self):
+    def add_to_verifier(self) -> bool:
+        """
+        Adds the agent to the verifier
+        :return: True if successful
+        """
         if not self._token:
             ValueError("Token must be deployed before adding device to the verifier")
 
@@ -85,10 +98,20 @@ class Agent(BaseModel):
     def remove_from_verifier(self):
         return verifier.delete_device(self.id)
 
-    def activate(self, timeout=None):
+    def activate(self, timeout: datetime.datetime = None) -> bool:
+        """
+        Mark the agent as active in the bridge.
+        :param timeout: (Optional) If set the agent gets removed in relaxed mode if the timeout is exceeded.
+        :return: True if activation was successful
+        """
         crud.add_active_device(self.id, self._token.token, timeout)
+        return True
 
     def _get_tpm_policy(self):
+        """
+        Construct tpm policy with the correct mask
+        :return: tpm_policy dict for the verifier
+        """
         output = {}
         # if self.strict:
             # TODO add all always static pcrs
