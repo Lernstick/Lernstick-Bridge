@@ -1,5 +1,5 @@
 import time
-
+import functools
 
 class RetryException(BaseException):
     pass
@@ -8,6 +8,7 @@ class RetryException(BaseException):
 def retry(func, tries=5, exception=Exception, wait=None):
     """Simple retry decorator"""
 
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         for _ in range(tries):
             try:

@@ -4,6 +4,8 @@ Copyright 2021 Thore Sommer
 '''
 
 import requests
+import urllib3
+
 from lernstick_bridge.schema.keylime import AgentRegistrar
 from lernstick_bridge.config import config, REGISTRAR_URL
 
@@ -11,6 +13,7 @@ from lernstick_bridge.config import config, REGISTRAR_URL
 session = requests.Session()
 session.cert = (config.registrar.tls_cert, config.registrar.tls_priv_key)
 session.verify = False
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def get_device(device_id: str):

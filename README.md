@@ -24,6 +24,7 @@ the device id from bridge. Then exam system activates that device for use at the
 Non manually activated devices that are active in the bridge are automatically removed after a configured time period.
 Manually activated devices must be removed by the exam system. 
 
+If a device was deactivated the agent must be restarted in order to register with the registrar again. 
 ## Deployment
 For easy deployment build docker image with: `sudo docker build -t lernstick-bridge -f docker/Dockerfile .`
 

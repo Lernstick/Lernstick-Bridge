@@ -102,6 +102,7 @@ def generate_mask(tpm_policy: dict = {}, measured_boot: bool = True, ima: bool =
     """
     pcrs = list(tpm_policy.keys())
     if measured_boot:
+        # TODO enabling this currently breaks something in Keylime
         pcrs += config.tenant.measuredboot_pcrs
     if ima:
         pcrs += config.tenant.ima_pcrs

@@ -64,7 +64,7 @@ class Agent(BaseModel):
         Construct agent contact url from IP and port
         :return: string that is the agent contac url
         """
-        return f"http://{self.registrar_data.ip}:{self.registrar_data.port}"
+        return f"http://{self.registrar_data.ip}:{self.registrar_data.port}/{config.config.keylime_api_entrypoint}"
 
     def deploy_token(self) -> Token:
         """
@@ -116,8 +116,7 @@ class Agent(BaseModel):
         # if self.strict:
             # TODO add all always static pcrs
             # output["0"] = self.device.pcr_0  # Firmware PCR
-        output["mask"] = util.generate_mask(output, measured_boot=True, ima=False)
-
+        output["mask"] = util.generate_mask(output, measured_boot=False, ima=False)
         return output
 
     def _get_ima_policy(self):

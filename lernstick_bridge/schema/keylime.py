@@ -31,7 +31,7 @@ class DeviceVerifierRequest(BaseModel):
     cloudagent_ip: IPv4Address
     cloudagent_port: int
     tpm_policy: str
-    vtpm_policy: str = json.dumps({"mask": "0x000000"})  # We don't use vtpms so just always add an empty mask
+    vtpm_policy: str = "{\"mask\": \"0x408000\"}"  # We don't use vtpms so just always add an empty mask
     metadata: str = json.dumps({})
     allowlist: str = json.dumps({})
     mb_refstate: str = None

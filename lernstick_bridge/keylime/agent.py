@@ -25,7 +25,7 @@ def do_quote(agent_url: str, aik: str):
     ret = requests.get(f"{agent_url}/quotes/identity?nonce={nonce}")
     if ret.status_code != 200:
         # TODO
-        return False
+        return False, None
 
     results = ret.json()["results"]
     hash_alg = results["hash_alg"]
@@ -114,5 +114,5 @@ def post_payload_u(agent_id, agent_url, payload: Payload, key=None):
     data = {'auth_tag': auth_tag,
             'encrypted_key': base64.b64encode(util.rsa_encrypt(key, payload.u)).decode("utf-8"),
             'payload': payload.encrypted_data}
-    res = requests.post(f"{agent_url}/v2/keys/ukey", data=json.dumps(data))
+    res = requests.post(f"{agent_url}/keys/ukey", data=json.dumps(data))
     return res.status_code == 200

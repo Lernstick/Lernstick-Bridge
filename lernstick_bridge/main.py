@@ -11,6 +11,7 @@ from lernstick_bridge.db.database import engine, db
 from lernstick_bridge.config import config, cert_store
 from lernstick_bridge.bridge import logic
 from lernstick_bridge.keylime import ek
+from lernstick_bridge.bridge_logger import logger
 
 models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
@@ -82,15 +83,21 @@ def verify_token(token: str):
 
 @app.on_event("shutdown")
 def cleanup():
+    logger.info("Starting shutdown actions")
     # Remove all active devices
+    logger.info("Remove all currently active devices.")
     for device in crud.get_active_devices():
         logic.deactivate_device(device.device_id)
 
     # Close database connection
+    logger.info("Close database connection.")
     db.close()
 
 
 @app.on_event("startup")
 async def startup():
+    logger.info(f"Started in {config.mode} mode.")
+    if not config.validate_ek_registration:
+        logger.warn("EK validation is disabled!")
     if config.mode == "relaxed":
         await logic.relaxed_loop()

@@ -2,10 +2,12 @@
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
+import time
 
 import requests
 from lernstick_bridge.schema.keylime import DeviceVerifierRequest
 from lernstick_bridge.config import config, VERIFIER_URL
+from lernstick_bridge.bridge_logger import logger
 
 session = requests.Session()
 session.cert = (config.verifier.tls_cert, config.verifier.tls_priv_key)
@@ -19,6 +21,8 @@ def add_device(device_id: str, verifier_request: DeviceVerifierRequest):
 
 def get_device(device_id: str):
     res = session.get(f"{VERIFIER_URL}/agents/{device_id}")
+    if res.status_code != 200:
+        return None
     return res.json()["results"]
 
 
@@ -30,7 +34,8 @@ def get_device_state(device_id: str):
 
 def delete_device(device_id: str):
     res = session.delete(f"{VERIFIER_URL}/agents/{device_id}")
-    # TODO block if 202 and wait for the device to actually disappear
+    if res.status_code == 202:
+        logger.info("Device will not be imediatly deleted")
     return res.status_code in [200, 202, 201]
 
 
