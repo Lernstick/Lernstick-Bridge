@@ -6,6 +6,7 @@ import datetime
 import time
 from asyncio import ensure_future
 
+import requests
 from starlette.concurrency import run_in_threadpool
 
 from lernstick_bridge.bridge.agent import Agent
@@ -13,6 +14,8 @@ from lernstick_bridge.config import config
 from lernstick_bridge.db import crud
 from lernstick_bridge.keylime import verifier, registrar
 from lernstick_bridge.bridge_logger import logger
+from lernstick_bridge.schema.keylime import RevocationMsg
+from lernstick_bridge.schema.bridge import RevocationMessage
 
 
 def activate_device(device_id: str) -> bool:
@@ -176,3 +179,15 @@ async def relaxed_loop():
             await run_in_threadpool(_relaxed_handle_agents)
 
     ensure_future(loop())
+
+
+def send_revocation(message: RevocationMsg):
+    session = requests.Session()
+    new_msg = RevocationMessage(device_id=message.agent_id,
+                                event_id="default",
+                                severity_level="1",
+                                context="DEFAULT")
+    try:
+        session.post(config.revocation_webhook, data=new_msg)
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Couldn't send revocation message \"{new_msg}\" via webhook: {e}")

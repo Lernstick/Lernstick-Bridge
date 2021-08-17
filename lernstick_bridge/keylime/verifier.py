@@ -35,7 +35,7 @@ def get_device_state(device_id: str):
 def delete_device(device_id: str):
     res = session.delete(f"{VERIFIER_URL}/agents/{device_id}")
     if res.status_code == 202:
-        logger.info("Device will not be imediatly deleted")
+        logger.info("Device will not be immediately deleted")
     return res.status_code in [200, 202, 201]
 
 

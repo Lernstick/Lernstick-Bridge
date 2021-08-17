@@ -6,7 +6,8 @@ Copyright 2021 Thore Sommer
 #  Objects needed to interact with the Keylime API
 
 import json
-from pydantic import BaseModel
+from pydantic import BaseModel, Json
+from typing import Union
 from ipaddress import IPv4Address
 
 from lernstick_bridge.config import config
@@ -40,6 +41,20 @@ class DeviceVerifierRequest(BaseModel):
     accept_tpm_hash_algs: str = json.dumps(config.tenant.accept_tpm_hash_algs)
     accept_tpm_encryption_algs: str = json.dumps(config.tenant.accept_tpm_encryption_algs)
     accept_tpm_signing_algs: str = json.dumps(config.tenant.accept_tpm_signing_algs)
+
+
+class RevocationMsg(BaseModel):
+    type: str
+    ip: IPv4Address
+    agent_id: str
+    port: int
+    tpm_policy: str
+    meta_data: str
+    event_time: str
+
+
+class RevocationResp(BaseModel):
+    msg: Union[Json[RevocationMsg], RevocationMsg]
 
 
 class Payload(BaseModel):

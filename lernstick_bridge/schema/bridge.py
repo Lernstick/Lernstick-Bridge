@@ -68,3 +68,10 @@ class Token(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class RevocationMessage(BaseModel):
+    device_id: str
+    event_id: str
+    severity_level: str
+    context: str

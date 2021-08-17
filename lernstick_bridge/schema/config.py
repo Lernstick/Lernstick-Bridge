@@ -42,6 +42,7 @@ class Config(BaseSettings):
     mode: str = "strict"  # TODO replace with Enum
     validate_ek_registration: bool = True  # Validate EK Cert when a device is registered. Only disable for debugging or if some devices dont have an EK cert
     db_url: str = "sqlite:///./sql_app.db"
+    revocation_webhook: str = ""
     tenant: Tenant = Tenant()
     verifier: Verifier
     registrar: Registrar

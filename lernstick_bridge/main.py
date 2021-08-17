@@ -2,11 +2,11 @@
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from typing import List
 
 from lernstick_bridge.db import models, crud
-from lernstick_bridge.schema import bridge
+from lernstick_bridge.schema import bridge, keylime
 from lernstick_bridge.db.database import engine, db
 from lernstick_bridge.config import config, cert_store
 from lernstick_bridge.bridge import logic
@@ -80,6 +80,11 @@ def verify_token(token: str):
         raise HTTPException(status_code=400, detail="Token does not belong to any device")
     return token
 
+
+@app.post("/revocation")
+def revocation(message: keylime.RevocationResp, background_task: BackgroundTasks):
+    background_task.add_task(logic.send_revocation, message.msg)
+    return "OK"
 
 @app.on_event("shutdown")
 def cleanup():
