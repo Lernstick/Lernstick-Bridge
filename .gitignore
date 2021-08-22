@@ -8,3 +8,4 @@ venv/
 build/
 dist/
 lernstick_bridge.egg-info/
+cv_ca

@@ -26,10 +26,9 @@ Manually activated devices must be removed by the exam system.
 
 If a device was deactivated the agent must be restarted in order to register with the registrar again. 
 ## Deployment
-For easy deployment build docker image with: `sudo docker build -t lernstick-bridge -f docker/Dockerfile .`
-
-Python dependencies are listed in `requirements.txt`, `tpm2-pytss` needs the headers with all its dependencies for 
-`tpm2-tss` and a recent version `tpm2-tools` is needed.
+Currently, only deployments using Docker are supported. 
+First run `setup_ca.sh` and use as password default. This setups the CA for Keylime.
+Then run `docker-compose up` to start bridge connected to a Keylime instance.
 
 ## Configuration
 Configuration is done using pydantic settings. The setting schema is specified in `lernstick_bridge/schema/config.py`. 
