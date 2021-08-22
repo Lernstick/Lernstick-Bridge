@@ -2,13 +2,16 @@
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
+import time
+
+import requests
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from typing import List
 
 from lernstick_bridge.db import models, crud
 from lernstick_bridge.schema import bridge, keylime
 from lernstick_bridge.db.database import engine, db
-from lernstick_bridge.config import config, cert_store
+from lernstick_bridge.config import config, cert_store, REGISTRAR_URL
 from lernstick_bridge.bridge import logic
 from lernstick_bridge.keylime import ek
 from lernstick_bridge.bridge_logger import logger
@@ -104,5 +107,15 @@ async def startup():
     logger.info(f"Started in {config.mode} mode.")
     if not config.validate_ek_registration:
         logger.warn("EK validation is disabled!")
+
     if config.mode == "relaxed":
+        # Wait for registrar to come available
+        while True:
+            try:
+                requests.get(REGISTRAR_URL, verify=False, cert=(config.registrar.tls_cert, config.registrar.tls_priv_key))
+                break
+            except requests.exceptions.ConnectionError as e:
+                time.sleep(1)
+                pass
+        logger.info("Starting loop")
         await logic.relaxed_loop()
