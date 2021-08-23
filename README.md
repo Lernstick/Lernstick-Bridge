@@ -26,9 +26,7 @@ Manually activated devices must be removed by the exam system.
 
 If a device was deactivated the agent must be restarted in order to register with the registrar again. 
 ## Deployment
-Currently, only deployments using Docker are supported. 
-First run `setup_ca.sh` and use as password default. This setups the CA for Keylime.
-Then run `docker-compose up` to start bridge connected to a Keylime instance.
+For creating a test environment see: [TEST_SETUP.md](TEST_SETUP.md)
 
 ## Configuration
 Configuration is done using pydantic settings. The setting schema is specified in `lernstick_bridge/schema/config.py`. 
