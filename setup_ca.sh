@@ -3,8 +3,10 @@
 
 IMAGE="ghcr.io/ths-on/keylime/keylime_verifier"
 
-echo "Use default as password or change it in the keylime.conf"
+echo "Use \"default\" as password or change it in the keylime.conf"
 
-docker run -v $(pwd)/cv_ca:/cv_ca  --entrypoint "/bin/bash" -it --rm $IMAGE -c "keylime_ca -d /cv_ca -c init -n init"
-docker run -v $(pwd)/cv_ca:/cv_ca  --entrypoint "/bin/bash" -it --rm $IMAGE -c "keylime_ca -d /cv_ca -c create -n client"
-docker run -v $(pwd)/cv_ca:/cv_ca  --entrypoint "/bin/bash" -it --rm $IMAGE -c "keylime_ca -d /cv_ca -c create -n server"
+docker run \
+  -v $(pwd)/cv_ca:/cv_ca  \
+  -v $(pwd)/setup_ca.py:/setup_ca.py \
+  -v $(pwd)/keylime.conf:/etc/keylime.conf \
+  --entrypoint "/setup_ca.py" -it --rm $IMAGE
