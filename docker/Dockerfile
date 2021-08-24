@@ -15,10 +15,12 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
     libjson-c-dev \
     tpm2-tools
 
+COPY requirements.txt /requirements.txt
+RUN pip3 install -r requirements.txt
+
 COPY . /lernstick
 WORKDIR /lernstick
 
-RUN pip3 install -r requirements.txt
 RUN python3 setup.py install
 
 EXPOSE 8080
