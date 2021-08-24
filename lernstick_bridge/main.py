@@ -5,89 +5,21 @@ Copyright 2021 Thore Sommer
 import time
 
 import requests
-from fastapi import FastAPI, HTTPException, BackgroundTasks
-from typing import List
+from fastapi import FastAPI
 
 from lernstick_bridge.db import models, crud
-from lernstick_bridge.schema import bridge, keylime
 from lernstick_bridge.db.database import engine, db
-from lernstick_bridge.config import config, cert_store, REGISTRAR_URL
+from lernstick_bridge.config import config, REGISTRAR_URL
 from lernstick_bridge.bridge import logic
-from lernstick_bridge.keylime import ek
 from lernstick_bridge.bridge_logger import logger
+from lernstick_bridge.routers import keylime, devices
 
 models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
+app.include_router(devices.router)
+app.include_router(keylime.router)
 
-@app.get("/devices", response_model=List[bridge.Device])
-def list_devices():
-    return crud.get_devices()
-
-
-@app.post("/devices/", response_model=bridge.Device)
-def create_device(device: bridge.DeviceCreate):
-    db_device = crud.get_device(device.id)
-    if db_device:
-        raise HTTPException(status_code=400, detail="Device already in database")
-    if config.validate_ek_registration:
-        if not ek.validate_ek(device.ek_cert.encode("utf-8"), cert_store):
-            raise HTTPException(status_code=400, detail="EK could not be validated against cert store")
-    return crud.add_device(device)
-
-
-@app.delete("/devices/{device_id}")
-def delete_device(device_id: str):
-    db_device = crud.get_device(device_id)
-    if not db_device:
-        raise HTTPException(status_code=400, detail="Device is not in the database")
-    crud.delete_device(device_id)
-    return "Ok" # TODO better response object
-
-
-@app.put("/devices/{device_id}")
-def update_device(device_id: str, device: bridge.Device):
-    pass
-
-
-@app.post("/devices/{device_id}/activate")
-def activate_device(device_id: str):
-    return logic.activate_device(device_id)
-
-
-@app.get("/devices/{device_id}/status", response_model=bridge.DeviceStatus)
-def device_status(device_id: str):
-    # TODO retive also state if active
-    device = crud.get_active_device(device_id)
-    if device:
-        status = "active"
-        if config.mode == "relaxed" and device.timeout is not None:
-            status = "auto-active"
-        return bridge.DeviceStatus(status=status, token=device.token)
-    device_db = crud.get_device(device_id)
-    if device_db:
-        return bridge.DeviceStatus(status="inactive")
-
-    raise HTTPException(status_code=400, detail="Device not active nor in the database")
-
-
-@app.post("/devices/{device_id}/deactivate")
-def deactivate_device(device_id: str):
-    return logic.deactivate_device(device_id)
-
-
-@app.post("/verify", response_model=bridge.Token)
-def verify_token(token: str):
-    token = crud.get_token(token)
-    if not token:
-        raise HTTPException(status_code=400, detail="Token does not belong to any device")
-    return token
-
-
-@app.post("/revocation")
-def revocation(message: keylime.RevocationResp, background_task: BackgroundTasks):
-    background_task.add_task(logic.send_revocation, message.msg)
-    return "OK"
 
 @app.on_event("shutdown")
 def cleanup():
