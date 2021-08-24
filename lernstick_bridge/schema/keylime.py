@@ -7,7 +7,7 @@ Copyright 2021 Thore Sommer
 
 import json
 from pydantic import BaseModel, Json
-from typing import Union
+from typing import Optional
 from ipaddress import IPv4Address
 
 from lernstick_bridge.config import config
@@ -47,14 +47,15 @@ class RevocationMsg(BaseModel):
     type: str
     ip: IPv4Address
     agent_id: str
-    port: int
+    port: str
     tpm_policy: str
     meta_data: str
     event_time: str
 
 
 class RevocationResp(BaseModel):
-    msg: Union[Json[RevocationMsg], RevocationMsg]
+    msg: Json[RevocationMsg]
+    signature: Optional[str]
 
 
 class Payload(BaseModel):

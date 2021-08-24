@@ -20,7 +20,8 @@ A development configuration for the Bridge can be found under `.docker_env` whic
 Depending on Bridge usage the following values might need some change:
 
 * mode: Can be `relaxed` or `strict` which configures the Bridge in the according mode
-* validate_ek_registration: Set `false` if you use a VM. **Only set to false during development!** 
+* validate_ek_registration: Set `false` if you use a VM. **Only set to false during development!**
+* revocation_webhook: Uncomment and set to the entrypoint where your system wants to receive revocation events.
 
 ## Starting the Bridge and Keylime
 Just run `docker-compose -up`.

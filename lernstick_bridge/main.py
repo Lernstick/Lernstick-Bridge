@@ -60,6 +60,8 @@ async def startup():
     logger.info(f"Started in {config.mode} mode.")
     if not config.validate_ek_registration:
         logger.warn("EK validation is disabled!")
+    if not config.revocation_webhook:
+        logger.warn("No revocation webhook is specified. Systems will not be notified when a revocation occurs!")
 
     if config.mode == "relaxed":
         # Wait for registrar to come available

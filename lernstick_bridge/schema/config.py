@@ -4,7 +4,7 @@ Copyright 2021 Thore Sommer
 '''
 
 # Static configuration for the bridge
-from typing import List
+from typing import List, Optional
 from pathlib import Path
 from pydantic import BaseSettings, BaseModel
 from datetime import timedelta
@@ -42,7 +42,7 @@ class Config(BaseSettings):
     mode: str = "strict"  # TODO replace with Enum
     validate_ek_registration: bool = True  # Validate EK Cert when a device is registered. Only disable for debugging or if some devices dont have an EK cert
     db_url: str = "sqlite:///./sql_app.db"
-    revocation_webhook: str = ""
+    revocation_webhook: Optional[str] = None
     tenant: Tenant = Tenant()
     verifier: Verifier
     registrar: Registrar

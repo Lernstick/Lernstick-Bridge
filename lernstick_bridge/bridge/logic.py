@@ -182,12 +182,18 @@ async def relaxed_loop():
 
 
 def send_revocation(message: RevocationMsg):
+    url = config.revocation_webhook
+    # Check if a webhook is specified
+    if not url:
+        return
     session = requests.Session()
+    # Dummy values will be replaced with real ones once the tagging part in Keylime is merged.
     new_msg = RevocationMessage(device_id=message.agent_id,
                                 event_id="default",
                                 severity_level="1",
                                 context="DEFAULT")
+    logger.info(f"Sending revocation message: {message}")
     try:
-        session.post(config.revocation_webhook, data=new_msg)
+        session.post(url, data=new_msg)
     except requests.exceptions.RequestException as e:
         logger.error(f"Couldn't send revocation message \"{new_msg}\" via webhook: {e}")
