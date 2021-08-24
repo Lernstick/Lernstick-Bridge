@@ -71,7 +71,7 @@ def deactivate_agent(agent_id: str):
     return logic.deactivate_agent(agent_id)
 
 
-@router.post("/verify", response_model=bridge.Token, tags=["agent_attestation"])
+@router.post("/agents/verify", response_model=bridge.Token, tags=["agent_attestation"])
 def verify_token(token: str):
     token = crud.get_token(token)
     if not token:

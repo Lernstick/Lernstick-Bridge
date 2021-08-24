@@ -21,7 +21,7 @@ def get_agent(agent_id: str) -> Optional[bridge.Agent]:
     :return: the Agent or None if not found
     """
     try:
-        agent = db.query(models.Agent).filter(models.Agent.id == agent_id).first()
+        agent = db.query(models.Agent).filter(models.Agent.agent_id == agent_id).first()
     except SQLAlchemyError as e:
         return None
 
