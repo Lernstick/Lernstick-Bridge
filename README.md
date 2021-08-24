@@ -32,6 +32,10 @@ For creating a test environment see: [TEST_SETUP.md](TEST_SETUP.md)
 Configuration is done using pydantic settings. The setting schema is specified in `lernstick_bridge/schema/config.py`. 
 More information can be found here: https://pydantic-docs.helpmanual.io/usage/settings/
 
+## API documentation
+FastAPI automatically generates a Swagger documentation. 
+It can be found when the Bridge is running under `IP:PORT/docs`.  
+
 ## Known design limitations
 * We allow only one valid generic Configuration for Keylime at a time. 
   Allowing multiple configurations conflicts with idea of autoconfiguration.

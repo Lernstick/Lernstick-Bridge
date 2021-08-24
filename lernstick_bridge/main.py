@@ -15,7 +15,28 @@ from lernstick_bridge.bridge_logger import logger
 from lernstick_bridge.routers import keylime, devices
 
 models.Base.metadata.create_all(bind=engine)
-app = FastAPI()
+
+tags_metadata = [
+    {
+        "name": "device_attestation",
+        "description": "Add and remove devices from Remote Attestation and verify their identity."
+    },
+    {
+        "name": "device_management",
+        "description": "Store and manage device specific information for Remote Attestation. Only used in strict mode."
+    },
+    {
+        "name": "keylime",
+        "description": "API entrypoint that is called by Keylime."
+    },
+]
+
+app = FastAPI(
+    title="Lernstick Bridge",
+    version="0.0.1",
+    description="Simplify interactions with Keylime for Remote Attestation",
+    openapi_tags=tags_metadata
+)
 
 app.include_router(devices.router)
 app.include_router(keylime.router)

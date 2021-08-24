@@ -8,7 +8,8 @@ from starlette.background import BackgroundTasks
 from lernstick_bridge.bridge import logic
 from lernstick_bridge.schema import keylime
 
-router = APIRouter()
+router = APIRouter(tags=["keylime"])
+
 
 @router.post("/revocation")
 def revocation(message: keylime.RevocationResp, background_task: BackgroundTasks):

@@ -15,12 +15,12 @@ from lernstick_bridge.schema import bridge
 router = APIRouter()
 
 
-@router.get("/devices", response_model=List[bridge.Device])
+@router.get("/devices", response_model=List[bridge.Device], tags=["device_management"])
 def list_devices():
     return crud.get_devices()
 
 
-@router.post("/devices/", response_model=bridge.Device)
+@router.post("/devices/", response_model=bridge.Device, tags=["device_management"])
 def create_device(device: bridge.DeviceCreate):
     db_device = crud.get_device(device.id)
     if db_device:
@@ -31,7 +31,7 @@ def create_device(device: bridge.DeviceCreate):
     return crud.add_device(device)
 
 
-@router.delete("/devices/{device_id}")
+@router.delete("/devices/{device_id}", tags=["device_management"])
 def delete_device(device_id: str):
     db_device = crud.get_device(device_id)
     if not db_device:
@@ -40,17 +40,17 @@ def delete_device(device_id: str):
     return "Ok" # TODO better response object
 
 
-@router.put("/devices/{device_id}")
+@router.put("/devices/{device_id}", tags=["device_management"])
 def update_device(device_id: str, device: bridge.Device):
     pass
 
 
-@router.post("/devices/{device_id}/activate")
+@router.post("/devices/{device_id}/activate", tags=["device_attestation"])
 def activate_device(device_id: str):
     return logic.activate_device(device_id)
 
 
-@router.get("/devices/{device_id}/status", response_model=bridge.DeviceStatus)
+@router.get("/devices/{device_id}/status", response_model=bridge.DeviceStatus, tags=["device_attestation"])
 def device_status(device_id: str):
     # TODO retive also state if active
     device = crud.get_active_device(device_id)
@@ -66,12 +66,12 @@ def device_status(device_id: str):
     raise HTTPException(status_code=400, detail="Device not active nor in the database")
 
 
-@router.post("/devices/{device_id}/deactivate")
+@router.post("/devices/{device_id}/deactivate", tags=["device_attestation"])
 def deactivate_device(device_id: str):
     return logic.deactivate_device(device_id)
 
 
-@router.post("/verify", response_model=bridge.Token)
+@router.post("/verify", response_model=bridge.Token, tags=["device_attestation"])
 def verify_token(token: str):
     token = crud.get_token(token)
     if not token:
