@@ -4,7 +4,7 @@ setup(
     name='lernstick_bridge',
     version='0.1',
     packages=['lernstick_bridge', 'lernstick_bridge.db', 'lernstick_bridge.bridge', 'lernstick_bridge.schema',
-              'lernstick_bridge.keylime'],
+              'lernstick_bridge.keylime', 'lernstick_bridge.routers'],
     url='',
     license='',
     author='Thore Sommer',
