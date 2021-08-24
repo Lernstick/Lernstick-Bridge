@@ -16,8 +16,8 @@ session.verify = False
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-def get_device(device_id: str):
-    res = session.get(f"{REGISTRAR_URL}/agents/{device_id}")
+def get_agent(agent_id: str):
+    res = session.get(f"{REGISTRAR_URL}/agents/{agent_id}")
     if res.status_code != 200:
         return None
     data = res.json()
@@ -26,13 +26,13 @@ def get_device(device_id: str):
     return AgentRegistrar(**data["results"])
 
 
-def get_devices():
+def get_agents():
     res = session.get(f"{REGISTRAR_URL}/agents")
     if res.status_code != 200:
         return None
     return res.json()["results"]["uuids"]
 
 
-def delete_device(device_id: str):
-    res = session.delete(f"{REGISTRAR_URL}/agents/{device_id}")
+def delete_agent(agent_id: str):
+    res = session.delete(f"{REGISTRAR_URL}/agents/{agent_id}")
     return res.status_code == 200

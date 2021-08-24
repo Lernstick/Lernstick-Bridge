@@ -15,7 +15,7 @@ router = APIRouter(tags=["keylime"])
 
 @router.post("/revocation")
 def revocation(message: keylime.RevocationResp, background_task: BackgroundTasks):
-    if not crud.get_active_device(message.msg.agent_id):
+    if not crud.get_active_agent(message.msg.agent_id):
         logger.info(f"Received for agent {message.msg.agent_id}, but this agent is not active. Ignoring...")
         return False
     logger.info(f"Received revocation message from Keylime: {message.json()}")

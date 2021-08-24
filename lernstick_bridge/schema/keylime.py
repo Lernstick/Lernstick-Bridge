@@ -24,7 +24,7 @@ class AgentRegistrar(BaseModel):
     port: int
 
 
-class DeviceVerifierRequest(BaseModel):
+class AgentVerifierRequest(BaseModel):
     """
     Request for the verifier with defaults set from the configuration.
     """

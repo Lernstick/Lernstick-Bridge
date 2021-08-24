@@ -13,35 +13,35 @@ from pydantic import BaseModel, PrivateAttr
 from lernstick_bridge import config
 from lernstick_bridge.db import crud
 from lernstick_bridge.keylime import registrar, ek, agent, verifier, util
-from lernstick_bridge.schema.bridge import Device, Token
-from lernstick_bridge.schema.keylime import AgentRegistrar, DeviceVerifierRequest
+from lernstick_bridge.schema.bridge import Agent, Token
+from lernstick_bridge.schema.keylime import AgentRegistrar, AgentVerifierRequest
 
 
-class Agent(BaseModel):
+class AgentBridge(BaseModel):
     """
     Agent class for doing common interactions with the agent during activation.
-    In relaxed mode device might be None.
+    In relaxed mode agent might be None.
     """
     strict: bool
-    id: str
-    device: Optional[Device]
+    agent_id: str
+    agent: Optional[Agent]
     registrar_data: AgentRegistrar
 
     _token: Optional[Token] = PrivateAttr(None)
     _pubkey: Optional[str] = PrivateAttr(None)  # Caching the pubkey to reduce requests to the agent
 
-    def __init__(self, device_id: str, strict=True):
-        registrar_data = registrar.get_device(device_id)
-        device = None
+    def __init__(self, agent_id: str, strict=True):
+        registrar_data = registrar.get_agent(agent_id)
+        agent = None
         if registrar_data is None:
-            raise ValueError("Didn't found device in registrar")
+            raise ValueError("Didn't found agent in registrar")
 
         if strict:
-            device = crud.get_device(device_id)
-            if device is None:
-                raise ValueError("Didn't found device in database")
+            agent = crud.get_agent(agent_id)
+            if agent is None:
+                raise ValueError("Didn't found agent in database")
 
-        super().__init__(id=device_id, strict=strict, device=device, registrar_data=registrar_data)
+        super().__init__(agent_id=agent_id, strict=strict, agent=agent, registrar_data=registrar_data)
 
     def valid_ek(self):
         """
@@ -49,7 +49,7 @@ class Agent(BaseModel):
         For validating the AIK call do_quote.
         """
         if self.strict:
-            return self.device.ek_cert == self.registrar_data.ekcert
+            return self.agent.ek_cert == self.registrar_data.ekcert
 
         return ek.validate_ek(base64.b64decode(self.registrar_data.ekcert), config.cert_store)
 
@@ -72,9 +72,9 @@ class Agent(BaseModel):
         :return: The deployed token
         """
         if not self._token:
-            token = Token(self.id)
+            token = Token(self.agent_id)
             payload = token.to_payload()
-            if agent.post_payload_u(self.id, self.get_url(), payload):
+            if agent.post_payload_u(self.agent_id, self.get_url(), payload):
                 self._token = token
         return self._token
 
@@ -84,19 +84,19 @@ class Agent(BaseModel):
         :return: True if successful
         """
         if not self._token:
-            ValueError("Token must be deployed before adding device to the verifier")
+            ValueError("Token must be deployed before adding agent to the verifier")
 
-        request = DeviceVerifierRequest(
+        request = AgentVerifierRequest(
             v=base64.b64encode(self._token.to_payload().v).decode("utf-8"),
             cloudagent_ip=self.registrar_data.ip,
             cloudagent_port=self.registrar_data.port,
             tpm_policy=json.dumps(self._get_tpm_policy()),
             allowlist=json.dumps(self._get_ima_policy())
         )
-        return verifier.add_device(self.id, request)
+        return verifier.add_agent(self.agent_id, request)
 
     def remove_from_verifier(self):
-        return verifier.delete_device(self.id)
+        return verifier.delete_agent(self.agent_id)
 
     def activate(self, timeout: datetime.datetime = None) -> bool:
         """
@@ -104,7 +104,7 @@ class Agent(BaseModel):
         :param timeout: (Optional) If set the agent gets removed in relaxed mode if the timeout is exceeded.
         :return: True if activation was successful
         """
-        crud.add_active_device(self.id, self._token.token, timeout)
+        crud.add_active_agent(self.agent_id, self._token.token, timeout)
         return True
 
     def _get_tpm_policy(self):
@@ -115,7 +115,7 @@ class Agent(BaseModel):
         output = {}
         # if self.strict:
             # TODO add all always static pcrs
-            # output["0"] = self.device.pcr_0  # Firmware PCR
+            # output["0"] = self.agent.pcr_0  # Firmware PCR
         output["mask"] = util.generate_mask(output, measured_boot=False, ima=False)
         return output
 

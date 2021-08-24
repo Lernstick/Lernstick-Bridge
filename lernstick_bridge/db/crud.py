@@ -14,92 +14,92 @@ from lernstick_bridge.schema import bridge
 from lernstick_bridge.db.database import db
 
 
-def get_device(device_id: str) -> Optional[bridge.Device]:
+def get_agent(agent_id: str) -> Optional[bridge.Agent]:
     """
-    Returns a device from the database
-    :param device_id: the device id
-    :return: the Device or None if not found
+    Returns a agent from the database
+    :param agent_id: the agent id
+    :return: the Agent or None if not found
     """
     try:
-        device = db.query(models.Device).filter(models.Device.id == device_id).first()
+        agent = db.query(models.Agent).filter(models.Agent.id == agent_id).first()
     except SQLAlchemyError as e:
         return None
 
-    if not device:
+    if not agent:
         return None
-    return bridge.Device.from_orm(device)
+    return bridge.Agent.from_orm(agent)
 
 
-def get_devices() -> List[bridge.Device]:
-    devices = db.query(models.Device).all()
-    return parse_obj_as(List[bridge.Device], devices)
+def get_agents() -> List[bridge.Agent]:
+    agents = db.query(models.Agent).all()
+    return parse_obj_as(List[bridge.Agent], agents)
 
 
-def add_device(device: bridge.Device):
-    db_device = models.Device(**dict(device))
-    db.add(db_device)
+def add_agent(agent: bridge.Agent):
+    db_agent = models.Agent(**dict(agent))
+    db.add(db_agent)
     db.commit()
-    db.refresh(db_device)
-    return db_device
+    db.refresh(db_agent)
+    return db_agent
 
 
-def delete_device(device_id: str) -> bool:
-    device = get_device(device_id)
-    db.delete(device)
+def delete_agent(agent_id: str) -> bool:
+    agent = get_agent(agent_id)
+    db.delete(agent)
     db.commit()
     return True
 
 
-def update_device(device: bridge.Device):
+def update_agent(agent: bridge.Agent):
     raise NotImplementedError()
 
 
-def add_active_device(device_id: str, token: str, timeout=None):
-    if get_active_device(device_id):
+def add_active_agent(agent_id: str, token: str, timeout=None):
+    if get_active_agent(agent_id):
         return False
 
-    active_device = models.ActiveDevice(
-        device_id=device_id,
+    active_agent = models.ActiveAgent(
+        agent_id=agent_id,
         token=token,
         timeout=timeout
     )
-    db.add(active_device)
+    db.add(active_agent)
     db.commit()
     return True
 
 
-def set_timeout_active_device(device_id: str, timeout: Optional[datetime.datetime]) -> bool:
-    device = db.query(models.ActiveDevice).filter(models.ActiveDevice.device_id == device_id).first()
-    if not device:
+def set_timeout_active_agent(agent_id: str, timeout: Optional[datetime.datetime]) -> bool:
+    agent = db.query(models.ActiveAgent).filter(models.ActiveAgent.agent_id == agent_id).first()
+    if not agent:
         return False
-    device.timeout = timeout
+    agent.timeout = timeout
     db.commit()
     return True
 
 
-def get_active_device(device_id: str) -> Optional[bridge.ActiveDevice]:
-    device = db.query(models.ActiveDevice).filter(models.ActiveDevice.device_id == device_id).first()
-    if not device:
+def get_active_agent(agent_id: str) -> Optional[bridge.ActiveAgent]:
+    agent = db.query(models.ActiveAgent).filter(models.ActiveAgent.agent_id == agent_id).first()
+    if not agent:
         return None
-    return bridge.ActiveDevice.from_orm(device)
+    return bridge.ActiveAgent.from_orm(agent)
 
 
-def get_active_devices() -> List[bridge.ActiveDevice]:
-    devices = db.query(models.ActiveDevice).all()
-    return parse_obj_as(List[bridge.ActiveDevice], devices)
+def get_active_agents() -> List[bridge.ActiveAgent]:
+    agents = db.query(models.ActiveAgent).all()
+    return parse_obj_as(List[bridge.ActiveAgent], agents)
 
 
-def delete_active_device(device_id: str) -> bool:
-    device = db.query(models.ActiveDevice).filter(models.ActiveDevice.device_id == device_id).first()
-    if not device:
+def delete_active_agent(agent_id: str) -> bool:
+    agent = db.query(models.ActiveAgent).filter(models.ActiveAgent.agent_id == agent_id).first()
+    if not agent:
         return False
-    db.delete(device)
+    db.delete(agent)
     db.commit()
     return True
 
 
 def get_token(token: str) -> Optional[bridge.Token]:
-    token = db.query(models.ActiveDevice).filter(models.ActiveDevice.token == token).first()
+    token = db.query(models.ActiveAgent).filter(models.ActiveAgent.token == token).first()
     if not token:
         return None
     return bridge.Token.from_orm(token)

@@ -5,7 +5,7 @@ Copyright 2021 Thore Sommer
 import time
 
 import requests
-from lernstick_bridge.schema.keylime import DeviceVerifierRequest
+from lernstick_bridge.schema.keylime import AgentVerifierRequest
 from lernstick_bridge.config import config, VERIFIER_URL
 from lernstick_bridge.bridge_logger import logger
 
@@ -14,28 +14,28 @@ session.cert = (config.verifier.tls_cert, config.verifier.tls_priv_key)
 session.verify = False
 
 
-def add_device(device_id: str, verifier_request: DeviceVerifierRequest):
-    res = session.post(f"{VERIFIER_URL}/agents/{device_id}", data=verifier_request.json())
+def add_agent(agent_id: str, verifier_request: AgentVerifierRequest):
+    res = session.post(f"{VERIFIER_URL}/agents/{agent_id}", data=verifier_request.json())
     return res.status_code == 200
 
 
-def get_device(device_id: str):
-    res = session.get(f"{VERIFIER_URL}/agents/{device_id}")
+def get_agent(agent_id: str):
+    res = session.get(f"{VERIFIER_URL}/agents/{agent_id}")
     if res.status_code != 200:
         return None
     return res.json()["results"]
 
 
-def get_device_state(device_id: str):
+def get_agent_state(agent_id: str):
     # TODO this will change when the tagging proposal is implemented
-    device_data = get_device(device_id)
-    return device_data["operational_state"]
+    agent_data = get_agent(agent_id)
+    return agent_data["operational_state"]
 
 
-def delete_device(device_id: str):
-    res = session.delete(f"{VERIFIER_URL}/agents/{device_id}")
+def delete_agent(agent_id: str):
+    res = session.delete(f"{VERIFIER_URL}/agents/{agent_id}")
     if res.status_code == 202:
-        logger.info("Device will not be immediately deleted")
+        logger.info("agent will not be immediately deleted")
     return res.status_code in [200, 202, 201]
 
 

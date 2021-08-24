@@ -12,18 +12,18 @@ from lernstick_bridge.db.database import engine, db
 from lernstick_bridge.config import config, REGISTRAR_URL
 from lernstick_bridge.bridge import logic
 from lernstick_bridge.bridge_logger import logger
-from lernstick_bridge.routers import keylime, devices
+from lernstick_bridge.routers import keylime, agents
 
 models.Base.metadata.create_all(bind=engine)
 
 tags_metadata = [
     {
-        "name": "device_attestation",
-        "description": "Add and remove devices from Remote Attestation and verify their identity."
+        "name": "agent_attestation",
+        "description": "Add and remove agents from Remote Attestation and verify their identity."
     },
     {
-        "name": "device_management",
-        "description": "Store and manage device specific information for Remote Attestation. Only used in strict mode."
+        "name": "agent_management",
+        "description": "Store and manage agents specific information for Remote Attestation. Only used in strict mode."
     },
     {
         "name": "keylime",
@@ -38,17 +38,17 @@ app = FastAPI(
     openapi_tags=tags_metadata
 )
 
-app.include_router(devices.router)
+app.include_router(agents.router)
 app.include_router(keylime.router)
 
 
 @app.on_event("shutdown")
 def cleanup():
     logger.info("Starting shutdown actions")
-    # Remove all active devices
-    logger.info("Remove all currently active devices.")
-    for device in crud.get_active_devices():
-        logic.deactivate_device(device.device_id)
+    # Remove all active agents
+    logger.info("Remove all currently active agents.")
+    for active_agents in crud.get_active_agents():
+        logic.deactivate_agent(active_agents.agent_id)
 
     # Close database connection
     logger.info("Close database connection.")
