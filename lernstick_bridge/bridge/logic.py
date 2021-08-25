@@ -16,7 +16,7 @@ from lernstick_bridge.keylime import verifier, registrar
 from lernstick_bridge.bridge_logger import logger
 from lernstick_bridge.schema.keylime import RevocationMsg
 from lernstick_bridge.schema.bridge import RevocationMessage
-
+from lernstick_bridge.utils import RetrySession
 
 def activate_agent(agent_id: str) -> bool:
     if config.mode == "strict":
@@ -186,7 +186,7 @@ def send_revocation(message: RevocationMsg):
     # Check if a webhook is specified
     if not url:
         return
-    session = requests.Session()
+    session = RetrySession()
     # Dummy values will be replaced with real ones once the tagging part in Keylime is merged.
     new_msg = RevocationMessage(agent_id=message.agent_id,
                                 event_id="default",
