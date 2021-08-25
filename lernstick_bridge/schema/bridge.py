@@ -75,3 +75,11 @@ class RevocationMessage(BaseModel):
     event_id: str
     severity_level: str
     context: str
+
+
+class HTTPError(BaseModel):
+    """Class that is used for documenting HTTPExceptions"""
+    detail: str
+
+    class Config:
+        schema_extra = {"example": {"detail": "(HTTPException) Not found."}}

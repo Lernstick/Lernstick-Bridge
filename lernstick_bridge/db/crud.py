@@ -51,7 +51,13 @@ def delete_agent(agent_id: str) -> bool:
 
 
 def update_agent(agent: bridge.Agent):
-    raise NotImplementedError()
+    db_agent = db.query(models.Agent).filter(models.Agent.agent_id == agent.agent_id).first()
+    for key, value in agent.dict().items():
+        if key is not None:
+            setattr(db_agent, key, value)
+    db.add(db_agent)
+    db.commit()
+    return True
 
 
 def add_active_agent(agent_id: str, token: str, timeout=None):

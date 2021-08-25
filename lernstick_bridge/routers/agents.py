@@ -20,39 +20,50 @@ def list_agents():
     return crud.get_agents()
 
 
-@router.post("/agents/", response_model=bridge.Agent, tags=["agent_management"])
+@router.post("/agents/", response_model=bridge.Agent, tags=["agent_management"],
+             responses={409: {"model": bridge.HTTPError, "description": "Agent was already in the database"},
+                        412: {"model": bridge.HTTPError, "description": "EK of the agent couldn't be validated."}})
 def create_agent(agent: bridge.AgentCreate):
     db_agent = crud.get_agent(agent.agent_id)
     if db_agent:
-        raise HTTPException(status_code=400, detail="Agent already in database")
+        raise HTTPException(status_code=409, detail="Agent already in database")
     if config.validate_ek_registration:
         if not ek.validate_ek(agent.ek_cert.encode("utf-8"), cert_store):
-            raise HTTPException(status_code=400, detail="EK could not be validated against cert store")
+            raise HTTPException(status_code=412, detail="EK could not be validated against cert store")
     return crud.add_agent(agent)
 
 
-@router.delete("/agents/{agent_id}", tags=["agent_management"])
+@router.delete("/agents/{agent_id}", tags=["agent_management"],
+               responses={404: {"model": bridge.HTTPError, "description": "Agent is not in the database"}})
 def delete_agent(agent_id: str):
     db_agent = crud.get_agent(agent_id)
     if not db_agent:
-        raise HTTPException(status_code=400, detail="Agent is not in the database")
+        raise HTTPException(status_code=404, detail="Agent is not in the database")
     crud.delete_agent(agent_id)
     return {}
 
 
-@router.put("/agents/{agent_id}", tags=["agent_management"])
+@router.put("/agents/{agent_id}", tags=["agent_management"],
+            responses={404: {"model": bridge.HTTPError, "description": "Agent is not in the database"}})
 def update_agent(agent_id: str, agent: bridge.Agent):
-    pass
+    if not crud.get_agent(agent_id):
+        raise HTTPException(status_code=404, detail="Agent is not in the database")
+    crud.update_agent(agent)
+    return {}
 
 
-@router.post("/agents/{agent_id}/activate", tags=["agent_attestation"])
+@router.post("/agents/{agent_id}/activate", tags=["agent_attestation"],
+             responses={400: {"model": bridge.HTTPError, "description": "Agent couldn't be activated"}})
 def activate_agent(agent_id: str):
-    return logic.activate_agent(agent_id)
+    activated = logic.activate_agent(agent_id)
+    if activated:
+        HTTPException(status_code=400, detail="Couldn't activate agent")
+    return {}
 
 
-@router.get("/agents/{agent_id}/status", response_model=bridge.AgentStatus, tags=["agent_attestation"])
+@router.get("/agents/{agent_id}/status", response_model=bridge.AgentStatus, tags=["agent_attestation"],
+            responses={404: {"model": bridge.HTTPError, "description": "Agent not active nor in the database"}})
 def agent_status(agent_id: str):
-    # TODO retive also state if active
     agent = crud.get_active_agent(agent_id)
     if agent:
         status = "active"
@@ -63,17 +74,21 @@ def agent_status(agent_id: str):
     if db_agent:
         return bridge.AgentStatus(status="inactive")
 
-    raise HTTPException(status_code=400, detail="Agent not active nor in the database")
+    raise HTTPException(status_code=404, detail="Agent not active nor in the database")
 
 
-@router.post("/agents/{agent_id}/deactivate", tags=["agent_attestation"])
+@router.post("/agents/{agent_id}/deactivate", tags=["agent_attestation"],
+             responses={404: {"model": bridge.HTTPError, "description": "Agent not found in active database"}})
 def deactivate_agent(agent_id: str):
+    if not crud.get_active_agent(agent_id):
+        raise HTTPException(status_code=404, detail="Agent not active")
     return logic.deactivate_agent(agent_id)
 
 
-@router.post("/agents/verify", response_model=bridge.Token, tags=["agent_attestation"])
+@router.post("/agents/verify", response_model=bridge.Token, tags=["agent_attestation"],
+             responses={404: {"model": bridge.HTTPError, "description": "Taken does not belong to any agent"}})
 def verify_token(token: str):
     token = crud.get_token(token)
     if not token:
-        raise HTTPException(status_code=400, detail="Token does not belong to any Agent")
+        raise HTTPException(status_code=404, detail="Token does not belong to any agent")
     return token
