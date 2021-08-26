@@ -13,10 +13,11 @@ import subprocess
 import base64
 import hashlib
 import sys
-import tempfile
-
 import yaml
 import requests
+
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
 
 
 BRIDGE_URL = "http://localhost:8080"
@@ -25,29 +26,24 @@ BOOT_LOG_PATH = "/sys/kernel/security/tpm0/binary_bios_measurements"
 def get_ek_cert():
     # Currently we only try to get the EK certificate from NV storage (Keylime also only does that)
     # This might fail on some platforms where the certificate must be obtained via external methods.
+    # We also assume currently that the EK certificate is DER encoded.
     out = subprocess.run(["tpm2_nvreadpublic"], capture_output=True)
     entries = yaml.safe_load(out.stdout.decode())
-
-    print(entries)
 
     if 0x1c00002 not in entries:
         exit("Couldn't find EK certificate in TPM NV")
 
     out = subprocess.run(["tpm2_nvread", "0x1c00002"], capture_output=True)
 
-    return base64.b64encode(out.stdout)
+    return out.stdout
 
 
-def generate_uuid():
-    # We just persist a ek handle to directly hash the byte structure and then free it again
-    # The public key is the same as it is in the ek certificate
-    (fd, ek_tpm) = tempfile.mkstemp()
-    out = subprocess.run(["tpm2_createek", "-G", "rsa", "-u", ek_tpm, "-c", "-"], capture_output=True)
-    handle = yaml.safe_load(out.stdout.decode())["persistent-handle"]
-    subprocess.run(["tpm2_evictcontrol", "-c", hex(handle)], capture_output=True)
-    with open(ek_tpm, 'rb') as f:
-        uuid = hashlib.sha256(base64.b64encode(f.read())).hexdigest()
-    return uuid
+def generate_uuid(ek_cert):
+    # With https://github.com/keylime/keylime/pull/743 the uuid is the EK pubkey im PEM hashed with sha256
+    cert = x509.load_der_x509_certificate(ek_cert)
+    pubkey_pem =cert.public_key().public_bytes(encoding=serialization.Encoding.PEM,
+                                               format=serialization.PublicFormat.SubjectPublicKeyInfo)
+    return hashlib.sha256(pubkey_pem).hexdigest()
 
 
 def get_pcrs():
@@ -76,15 +72,17 @@ def main():
         url = sys.argv[1]
     if os.getuid() != 0:
         exit("Script must be run as root!")
+    ek_cert = get_ek_cert()
     data = {
-        "agent_id": generate_uuid(),
-        "ek_cert": get_ek_cert(),
+        "agent_id": generate_uuid(ek_cert),
+        "ek_cert": base64.b64encode(ek_cert),
         "event_log_reference": get_boot_log(),
         **get_pcrs()
     }
     res = requests.post(f"{url}/agents", json=data)
     if res.status_code == 200:
         print("Submitted data successfully")
+        print(f'Agent id: {data["agent_id"]}')
     else:
         print(data)
         print(f"Submission failed with status code {res.status_code}")
