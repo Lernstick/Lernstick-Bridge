@@ -54,11 +54,15 @@ def update_agent(agent_id: str, agent: bridge.Agent):
 
 
 @router.post("/agents/{agent_id}/activate", tags=["agent_attestation"],
-             responses={400: {"model": bridge.HTTPError, "description": "Agent couldn't be activated"}})
+             responses={400: {"model": bridge.HTTPError, "description": "Agent couldn't be activated"},
+                        409: {"model": bridge.HTTPError, "description": "Agent already active"}})
 def activate_agent(agent_id: str):
+    if crud.get_active_agent(agent_id):
+        raise HTTPException(status_code=409, detail="Agent already active")
+
     activated = logic.activate_agent(agent_id)
-    if activated:
-        HTTPException(status_code=400, detail="Couldn't activate agent")
+    if not activated:
+        raise HTTPException(status_code=400, detail="Couldn't activate agent")
     return {}
 
 
