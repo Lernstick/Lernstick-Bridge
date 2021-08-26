@@ -2,6 +2,7 @@
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
+import base64
 from typing import List
 
 from fastapi import HTTPException, APIRouter
@@ -28,7 +29,7 @@ def create_agent(agent: bridge.AgentCreate):
     if db_agent:
         raise HTTPException(status_code=409, detail="Agent already in database")
     if config.validate_ek_registration:
-        if not ek.validate_ek(agent.ek_cert.encode("utf-8"), cert_store):
+        if not ek.validate_ek(base64.b64decode(agent.ek_cert), cert_store):
             raise HTTPException(status_code=412, detail="EK could not be validated against cert store")
     return crud.add_agent(agent)
 
