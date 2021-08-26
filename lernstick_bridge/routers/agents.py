@@ -20,7 +20,7 @@ def list_agents():
     return crud.get_agents()
 
 
-@router.post("/agents/", response_model=bridge.Agent, tags=["agent_management"],
+@router.post("/agents", response_model=bridge.Agent, tags=["agent_management"],
              responses={409: {"model": bridge.HTTPError, "description": "Agent was already in the database"},
                         412: {"model": bridge.HTTPError, "description": "EK of the agent couldn't be validated."}})
 def create_agent(agent: bridge.AgentCreate):
