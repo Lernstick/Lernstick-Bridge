@@ -10,7 +10,7 @@ from fastapi import HTTPException, APIRouter
 from lernstick_bridge.bridge import logic
 from lernstick_bridge.config import config, cert_store
 from lernstick_bridge.db import crud
-from lernstick_bridge.keylime import ek
+from lernstick_bridge.keylime import ek, verifier
 from lernstick_bridge.schema import bridge
 
 router = APIRouter()
@@ -74,7 +74,7 @@ def agent_status(agent_id: str):
         status = "active"
         if config.mode == "relaxed" and agent.timeout is not None:
             status = "auto-active"
-        return bridge.AgentStatus(status=status, token=agent.token)
+        return bridge.AgentStatus(status=status, state=verifier.get_agent_state(agent_id), token=agent.token)
     db_agent = crud.get_agent(agent_id)
     if db_agent:
         return bridge.AgentStatus(status="inactive")
