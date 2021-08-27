@@ -30,7 +30,9 @@ Just run `docker-compose -up`.
  * Ensure that the device has a TPM2.0
  * Download Debian 11 from: https://www.debian.org/download
  * Install Debian 11 on the device with Secure Boot enabled 
- * Install Keylime package from TODO
+ * Install Keylime packages
+   * Download the Debian packages 
+   * Install them with `apt install ./python3-keylime-lib*.deb ./python3-keylime-agent*.deb`
 
 Changes to `/etc/keylime-agent.conf`:
 
@@ -42,6 +44,14 @@ Changes to `/etc/keylime-agent.conf`:
 
 Now restart the agent with `systemctl restart keylime_agent`.
 If this fails make sure that the registrar is running and reachable from the device.
+
+## Registering the agent for strict mode
+For registering the agent at the Bridge for strict mode can be done with the `register_agent.py` script.
+It collects all the necessary information and then submits it to the Bridge.
+The script is only a reference implementation and normally the agents shouldn't submit their registration directly to
+the Bridge.
+
+Usage: `python3 register_agent.py "http://BRIDGE_IP:BRIDGE_PORT"`
 
 ## Building the Keylime Debian Package
 Note prebuild images can be found here: TODO
