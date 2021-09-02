@@ -14,6 +14,9 @@ services:
       - type: bind
         source: ./cv_ca
         target: /cv_ca
+      - type: bind
+        source: ./measured_boot/mb_policy.json
+        target: /mb_policy.json
 
   verifier:
     image: ghcr.io/ths-on/keylime/keylime_verifier
@@ -28,6 +31,10 @@ services:
       - type: bind
         source: ./cv_ca
         target: /var/lib/keylime/cv_ca
+      - type: bind
+        source: ./measured_boot/lernstick_policy.py
+        target: /usr/local/lib/python3.9/site-packages/keylime/elchecking/lernstick_policy.py
+
 
   registrar:
     image: ghcr.io/ths-on/keylime/keylime_registrar

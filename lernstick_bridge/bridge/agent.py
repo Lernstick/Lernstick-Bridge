@@ -91,7 +91,8 @@ class AgentBridge(BaseModel):
             cloudagent_ip=self.registrar_data.ip,
             cloudagent_port=self.registrar_data.port,
             tpm_policy=json.dumps(self._get_tpm_policy()),
-            allowlist=json.dumps(self._get_ima_policy())
+            allowlist=json.dumps(self._get_ima_policy()),
+            mb_refstate=json.dumps(config.MB_POLICY)
         )
         return verifier.add_agent(self.agent_id, request)
 
@@ -116,7 +117,7 @@ class AgentBridge(BaseModel):
         # if self.strict:
             # TODO add all always static pcrs
             # output["0"] = self.agent.pcr_0  # Firmware PCR
-        output["mask"] = util.generate_mask(output, measured_boot=False, ima=False)
+        output["mask"] = util.generate_mask(output, measured_boot=True, ima=False)
         return output
 
     def _get_ima_policy(self):

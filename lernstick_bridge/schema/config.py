@@ -43,6 +43,7 @@ class Config(BaseSettings):
     validate_ek_registration: bool = True  # Validate EK Cert when a agent is registered. Only disable for debugging or if some devices dont have an EK cert
     db_url: str = "sqlite:///./sql_app.db"
     revocation_webhook: Optional[str] = None
+    measured_boot_policy: Optional[str] = None  # Make sure that the keylime.conf includes the correct module to parse the policy
     retry_attempts: int = 4
     tenant: Tenant = Tenant()
     verifier: Verifier
