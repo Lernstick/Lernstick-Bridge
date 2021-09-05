@@ -4,8 +4,8 @@ Copyright 2021 Thore Sommer
 '''
 import json
 
-from lernstick_bridge.schema.config import Config
 from lernstick_bridge.keylime import ek
+from lernstick_bridge.schema.config import Config
 
 config = Config()
 cert_store = ek.create_ca_store(config.tpm_cert_store)

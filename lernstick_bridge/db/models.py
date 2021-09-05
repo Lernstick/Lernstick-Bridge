@@ -3,7 +3,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
 
-from sqlalchemy import Column, String, DateTime
+from sqlalchemy import Column, DateTime, String
 
 from lernstick_bridge.db.database import Base
 

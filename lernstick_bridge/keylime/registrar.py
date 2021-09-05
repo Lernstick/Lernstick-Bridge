@@ -3,15 +3,15 @@ SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
 
+from typing import List, Optional
+
 import requests
 import urllib3
 
-from typing import Optional, List
-
-from lernstick_bridge.schema.keylime import AgentRegistrar
-from lernstick_bridge.config import config, REGISTRAR_URL
-from lernstick_bridge.utils import RetrySession
 from lernstick_bridge.bridge_logger import logger
+from lernstick_bridge.config import REGISTRAR_URL, config
+from lernstick_bridge.schema.keylime import AgentRegistrar
+from lernstick_bridge.utils import RetrySession
 
 # TODO don't disable SSL Cert validation
 session = RetrySession()

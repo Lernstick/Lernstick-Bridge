@@ -7,12 +7,12 @@ import time
 import requests
 from fastapi import FastAPI
 
-from lernstick_bridge.db import crud
-from lernstick_bridge.db.database import engine, db, Base
-from lernstick_bridge.config import config, REGISTRAR_URL
 from lernstick_bridge.bridge import logic
 from lernstick_bridge.bridge_logger import logger
-from lernstick_bridge.routers import keylime, agents
+from lernstick_bridge.config import REGISTRAR_URL, config
+from lernstick_bridge.db import crud
+from lernstick_bridge.db.database import Base, db, engine
+from lernstick_bridge.routers import agents, keylime
 
 Base.metadata.create_all(bind=engine)
 

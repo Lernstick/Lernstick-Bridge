@@ -8,18 +8,18 @@ Copyrigyt 2021 Thore Sommer
 import base64
 import hashlib
 import hmac
-import string
 import os
+import string
+from typing import Any, Dict, Optional
 
 import cryptography
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.ciphers import (Cipher, algorithms, modes)
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-from typing import Any, Dict, Optional
-
-from lernstick_bridge.schema.keylime import Payload
 from lernstick_bridge.config import config
+from lernstick_bridge.schema.keylime import Payload
+
 AES_BLOCK_SIZE = 16
 
 

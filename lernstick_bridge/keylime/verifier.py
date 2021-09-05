@@ -2,13 +2,13 @@
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
-import requests
-
 from typing import Any, Dict, Optional
 
-from lernstick_bridge.schema.keylime import AgentVerifierRequest
-from lernstick_bridge.config import config, VERIFIER_URL
+import requests
+
 from lernstick_bridge.bridge_logger import logger
+from lernstick_bridge.config import VERIFIER_URL, config
+from lernstick_bridge.schema.keylime import AgentVerifierRequest
 from lernstick_bridge.utils import RetrySession
 
 session = RetrySession()

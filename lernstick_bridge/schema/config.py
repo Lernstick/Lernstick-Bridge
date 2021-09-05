@@ -1,14 +1,16 @@
 '''
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
+
+Static configuration for the bridge
 '''
 
-# Static configuration for the bridge
-from typing import List, Optional
-from pathlib import Path
-from pydantic import BaseSettings, BaseModel
 from datetime import timedelta
 from ipaddress import IPv4Address
+from pathlib import Path
+from typing import List, Optional
+
+from pydantic import BaseModel, BaseSettings
 
 
 class Tenant(BaseModel):

@@ -2,12 +2,11 @@
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
-from urllib3.util import Retry
 from requests import Session
 from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 
 from lernstick_bridge.config import config
-
 
 _retries = Retry(
     total=config.retry_attempts,

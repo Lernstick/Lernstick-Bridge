@@ -6,9 +6,10 @@ Copyright 2021 Thore Sommer
 #  Objects needed to interact with the Keylime API
 
 import json
-from pydantic import BaseModel, Json
-from typing import Optional, Union
 from ipaddress import IPv4Address
+from typing import Optional, Union
+
+from pydantic import BaseModel, Json
 
 from lernstick_bridge.config import config
 

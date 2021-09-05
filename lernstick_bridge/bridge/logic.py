@@ -10,12 +10,12 @@ import requests
 from starlette.concurrency import run_in_threadpool
 
 from lernstick_bridge.bridge.agent import AgentBridge
+from lernstick_bridge.bridge_logger import logger
 from lernstick_bridge.config import config
 from lernstick_bridge.db import crud
-from lernstick_bridge.keylime import verifier, registrar
-from lernstick_bridge.bridge_logger import logger
-from lernstick_bridge.schema.keylime import RevocationMsg
+from lernstick_bridge.keylime import registrar, verifier
 from lernstick_bridge.schema.bridge import RevocationMessage
+from lernstick_bridge.schema.keylime import RevocationMsg
 from lernstick_bridge.utils import RetrySession
 
 

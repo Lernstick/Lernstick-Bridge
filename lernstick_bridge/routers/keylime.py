@@ -8,7 +8,7 @@ from starlette.background import BackgroundTasks
 from lernstick_bridge.bridge import logic
 from lernstick_bridge.bridge_logger import logger
 from lernstick_bridge.db import crud
-from lernstick_bridge.schema import keylime, bridge
+from lernstick_bridge.schema import bridge, keylime
 
 router = APIRouter(tags=["keylime"])
 

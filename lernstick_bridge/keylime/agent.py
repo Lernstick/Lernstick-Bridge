@@ -3,23 +3,22 @@ SPDX-License-Identifier: Apache-2.0
 Copyright 2017 Massachusetts Institute of Technology.
 Copyright 2021 Thore Sommer
 '''
+import base64
 # Some parts of the parsing are very similar to the original Keylime implementation so this module is Apache 2.0 licenced
 # and the copyright notice is added.
 import json
+import subprocess
 import zlib
+from tempfile import NamedTemporaryFile
+from typing import Any, Optional, Tuple
 
 import cryptography.hazmat.primitives.serialization
-import tpm2_pytss
-import base64
 import requests
-import subprocess
+import tpm2_pytss
 
-from tempfile import NamedTemporaryFile
-from typing import Any, Tuple, Optional
-
-from lernstick_bridge.schema.keylime import Payload
-from lernstick_bridge.keylime import util
 from lernstick_bridge.bridge_logger import logger
+from lernstick_bridge.keylime import util
+from lernstick_bridge.schema.keylime import Payload
 from lernstick_bridge.utils import RetrySession
 
 

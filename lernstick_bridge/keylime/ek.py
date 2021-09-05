@@ -10,11 +10,8 @@ from pathlib import Path
 from typing import Optional
 
 import OpenSSL.crypto
-from OpenSSL.crypto import X509Store, \
-    X509StoreContext, \
-    X509StoreContextError, \
-    load_certificate, \
-    FILETYPE_PEM, FILETYPE_ASN1
+from OpenSSL.crypto import (FILETYPE_ASN1, FILETYPE_PEM, X509Store, X509StoreContext,
+                            X509StoreContextError, load_certificate)
 
 
 def validate_ek(ek_cert: bytes, cert_store: X509Store) -> bool:

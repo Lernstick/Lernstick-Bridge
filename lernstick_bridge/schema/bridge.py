@@ -3,11 +3,12 @@ SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
 import datetime
-
-from pydantic import BaseModel, PrivateAttr, Field
 from typing import Optional
-from lernstick_bridge.schema.keylime import Payload
+
+from pydantic import BaseModel, Field, PrivateAttr
+
 from lernstick_bridge.keylime import util
+from lernstick_bridge.schema.keylime import Payload
 
 
 class Agent(BaseModel):

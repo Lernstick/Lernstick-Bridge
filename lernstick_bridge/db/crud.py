@@ -3,15 +3,14 @@ SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
 import datetime
-
-from pydantic import parse_obj_as
 from typing import List, Optional
 
+from pydantic import parse_obj_as
 from sqlalchemy.exc import SQLAlchemyError
 
 from lernstick_bridge.db import models
-from lernstick_bridge.schema import bridge
 from lernstick_bridge.db.database import db
+from lernstick_bridge.schema import bridge
 
 
 def get_agent(agent_id: str) -> Optional[bridge.Agent]:

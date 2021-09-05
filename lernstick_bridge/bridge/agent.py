@@ -6,13 +6,13 @@ Copyright 2021 Thore Sommer
 import base64
 import datetime
 import json
-
 from typing import Any, Dict, Optional
+
 from pydantic import BaseModel, PrivateAttr, root_validator
 
 from lernstick_bridge import config
 from lernstick_bridge.db import crud
-from lernstick_bridge.keylime import registrar, ek, agent, verifier, util
+from lernstick_bridge.keylime import agent, ek, registrar, util, verifier
 from lernstick_bridge.schema.bridge import Agent, Token
 from lernstick_bridge.schema.keylime import AgentRegistrar, AgentVerifierRequest
 

@@ -5,10 +5,10 @@ Copyright 2021 Thore Sommer
 import base64
 from typing import Any, Dict, List
 
-from fastapi import HTTPException, APIRouter
+from fastapi import APIRouter, HTTPException
 
 from lernstick_bridge.bridge import logic
-from lernstick_bridge.config import config, cert_store
+from lernstick_bridge.config import cert_store, config
 from lernstick_bridge.db import crud
 from lernstick_bridge.keylime import ek, verifier
 from lernstick_bridge.schema import bridge
