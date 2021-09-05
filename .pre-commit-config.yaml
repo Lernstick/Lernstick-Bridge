@@ -1,0 +1,23 @@
+files: lernstick_bridge/.*
+repos:
+  - repo: https://github.com/pycqa/isort
+    rev: 5.8.0
+    hooks:
+      - id: isort
+        name: isort (python)
+        args:
+          - "-l 100"
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: local
+    hooks:
+    - id: tox
+      name: Run mypy and pylint
+      entry: tox
+      language: system
+      pass_filenames: false
+      types: [python]
