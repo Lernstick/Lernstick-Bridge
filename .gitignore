@@ -4,6 +4,7 @@ client-*
 venv/
 .mypy_cache/
 .idea/
+.tox
 *.pyc
 build/
 dist/
