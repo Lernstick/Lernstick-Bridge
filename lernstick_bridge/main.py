@@ -27,7 +27,8 @@ tags_metadata = [
     },
     {
         "name": "keylime",
-        "description": "API entrypoint that is called by Keylime."
+        "description": "API entrypoint that is called by Keylime. "
+                       "See '/revocation' callbacks for message format that is send to the exam system."
     },
 ]
 
