@@ -60,7 +60,7 @@ class AgentBridge(BaseModel):
 
         return ek.validate_ek(base64.b64decode(self.registrar_data.ekcert), config.cert_store)
 
-    def do_qoute(self) -> bool:
+    def do_quote(self) -> bool:
         assert self.registrar_data
         valid, pubkey = agent.do_quote(self.get_url(), self.registrar_data.aik_tpm)
         if valid:

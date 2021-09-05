@@ -51,7 +51,7 @@ def _strict_activate_agent(agent_id: str) -> bool:  # pylint: disable=too-many-r
             logger.error(f"EK for agent {agent_id} was invalid!")
             return False
 
-        if not agent.do_qoute():
+        if not agent.do_quote():
             logger.error(f"Quote form agent {agent_id} was invalid!")
             return False
 
@@ -144,7 +144,7 @@ def _relaxed_handle_agents() -> None:
                 logger.error(f"EK for {agent_id} couldn't be validated!")
                 continue
 
-            if not agent.do_qoute():
+            if not agent.do_quote():
                 logger.error(f"Quote of {agent_id} was invalid!")
                 continue
 
