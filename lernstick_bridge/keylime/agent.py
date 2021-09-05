@@ -22,7 +22,7 @@ from lernstick_bridge.schema.keylime import Payload
 from lernstick_bridge.utils import RetrySession
 
 
-def do_quote(agent_url: str, aik: str) -> Tuple[bool, Optional[str]]:
+def do_quote(agent_url: str, aik: str) -> Tuple[bool, Optional[str]]:  # pylint: disable=too-many-locals
     nonce = util.get_random_nonce()
 
     try:
@@ -55,7 +55,7 @@ def do_quote(agent_url: str, aik: str) -> Tuple[bool, Optional[str]]:
     return quote_valid, results["pubkey"]
 
 
-def _check_qoute(aik: bytes, quote_data: bytes, signature_data: bytes, pcr_data: bytes, nonce: str, hash_alg: str) -> bool:
+def _check_qoute(aik: bytes, quote_data: bytes, signature_data: bytes, pcr_data: bytes, nonce: str, hash_alg: str) -> bool:  # pylint: disable=too-many-arguments
     """
     Validates a quote using tpm2_checkqoute.
     :param aik: AIK PEM encoded
@@ -81,7 +81,7 @@ def _check_qoute(aik: bytes, quote_data: bytes, signature_data: bytes, pcr_data:
         pcr_file.seek(0)
         aik_file.seek(0)
 
-        ret = subprocess.run(
+        ret = subprocess.run(  # pylint: disable=subprocess-run-check
             ["tpm2_checkquote",
              "-u", aik_file.name,
              "-m", quote_file.name,
@@ -119,9 +119,9 @@ def post_payload_u(agent_id: str, agent_url: str, payload: Payload, key: Any = N
     auth_tag = util.do_hmac(payload.k, agent_id)
     if key is None:
         key = get_pubkey(agent_url)
-    data = {'auth_tag': auth_tag,
-            'encrypted_key': base64.b64encode(util.rsa_encrypt(key, payload.u)).decode("utf-8"),
-            'payload': payload.encrypted_data}
+    data = {"auth_tag": auth_tag,
+            "encrypted_key": base64.b64encode(util.rsa_encrypt(key, payload.u)).decode("utf-8"),
+            "payload": payload.encrypted_data}
     try:
         res = RetrySession().post(f"{agent_url}/keys/ukey", data=json.dumps(data))
     except requests.exceptions.RequestException as e:

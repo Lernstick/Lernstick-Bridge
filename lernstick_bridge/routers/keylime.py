@@ -17,7 +17,7 @@ callback_router = APIRouter()  # This router is only used for documentation purp
 
 
 @callback_router.post("{$revocation_webhook}", description="Sends revocation message to exam system")
-def send_revocation_message(msg: bridge.RevocationMessage) -> None:
+def send_revocation_message(_: bridge.RevocationMessage) -> None:
     pass
 
 

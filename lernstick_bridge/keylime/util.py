@@ -23,17 +23,17 @@ from lernstick_bridge.schema.keylime import Payload
 AES_BLOCK_SIZE = 16
 
 
-def generate_payload(input: str) -> Payload:
+def generate_payload(input_data: str) -> Payload:
     """
     Generates a payload from given input string
-    :param input: input string
+    :param input_data: input string
     :return: Payload object
     """
     k = generate_random_key(32)
     v = generate_random_key(32)
     u = _bitwise_xor(k, v)
-    encrypted_data = _encrypt(input, k)
-    return Payload(k=k, v=v, u=u, encrypted_data=encrypted_data, plain_data=input)
+    encrypted_data = _encrypt(input_data, k)
+    return Payload(k=k, v=v, u=u, encrypted_data=encrypted_data, plain_data=input_data)
 
 
 def get_random_nonce(length: int = 20) -> str:
@@ -47,13 +47,13 @@ def get_random_nonce(length: int = 20) -> str:
 
 
 def do_hmac(key: bytes, value: str) -> str:
-    h = hmac.new(key, msg=None, digestmod=hashlib.sha384)
-    h.update(value.encode('utf-8'))
-    return h.hexdigest()
+    h_digest = hmac.new(key, msg=None, digestmod=hashlib.sha384)
+    h_digest.update(value.encode("utf-8"))
+    return h_digest.hexdigest()
 
 
 def _bitwise_xor(a: bytes, b: bytes) -> bytes:
-    assert (len(a) == len(b))
+    assert len(a) == len(b)
     out = bytearray()
     for i, j in zip(bytearray(a), bytearray(b)):
         out.append(i ^ j)
@@ -64,10 +64,10 @@ def generate_random_key(length: int) -> bytes:
     return os.urandom(length)
 
 
-def _encrypt(input: str, key: bytes) -> str:
+def _encrypt(input_data: str, key: bytes) -> str:
     """
     Encrypts the input with the key using AES encryption
-    :param input: to encrypt
+    :param input_data: to encrypt
     :param key: for encryption
     :return: Then encrypted input base64 encoded
     Note: This function is imported from Keylime
@@ -75,7 +75,7 @@ def _encrypt(input: str, key: bytes) -> str:
     iv = generate_random_key(AES_BLOCK_SIZE)
     encryptor = Cipher(algorithms.AES(key), modes.GCM(
         iv, None, None), backend=default_backend()).encryptor()
-    encrypted_input = encryptor.update(input.encode('ascii')) + encryptor.finalize()
+    encrypted_input = encryptor.update(input_data.encode("ascii")) + encryptor.finalize()
     return base64.b64encode(iv + encrypted_input + encryptor.tag).decode("utf-8")  # type: ignore
 
 
@@ -89,9 +89,10 @@ def rsa_encrypt(key: Any, message: bytes) -> bytes:
     Note: This function is imported from Keylime
     """
     return key.encrypt(bytes(message),
-                       cryptography.hazmat.primitives.asymmetric.padding.OAEP(mgf=cryptography.hazmat.primitives.asymmetric.padding.MGF1(algorithm=hashes.SHA1()),
-                                                                              algorithm=hashes.SHA1(),
-                                                                              label=None))
+                       cryptography.hazmat.primitives.asymmetric.padding.OAEP(
+                           mgf=cryptography.hazmat.primitives.asymmetric.padding.MGF1(algorithm=hashes.SHA1()),
+                           algorithm=hashes.SHA1(),
+                           label=None))
 
 
 def generate_mask(tpm_policy: Optional[Dict[int, Any]] = None, measured_boot: bool = True, ima: bool = True) -> str:

@@ -2,7 +2,7 @@
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
-
+# pylint: disable=too-few-public-methods
 #  Objects needed to interact with the Keylime API
 
 import json
@@ -55,7 +55,7 @@ class RevocationMsg(BaseModel):
 
 
 class RevocationResp(BaseModel):
-    msg: Union[Json[RevocationMsg], RevocationMsg]  # type: ignore
+    msg: Union[Json[RevocationMsg], RevocationMsg]  # type: ignore # pylint: disable=E1136
     signature: Optional[str]
 
 
@@ -68,4 +68,3 @@ class Payload(BaseModel):
     v: bytes
     encrypted_data: str
     plain_data: str
-

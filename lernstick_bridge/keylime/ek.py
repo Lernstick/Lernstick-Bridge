@@ -43,8 +43,8 @@ def create_ca_store(path: Optional[Path]) -> X509Store:
     filetypes = ["pem", "cer", "crt"]
     for ext in filetypes:
         for file in glob.glob(os.path.join(path, f"**/*.{ext}"), recursive=True):
-            with open(file, 'rb') as f:
-                data = f.read()
+            with open(file, "rb") as cert_file:
+                data = cert_file.read()
                 cert = None
                 try:
                     cert = load_certificate(FILETYPE_PEM, data)

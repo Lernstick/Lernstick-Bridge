@@ -60,9 +60,9 @@ def cleanup() -> None:
 async def startup() -> None:
     logger.info(f"Started in {config.mode} mode.")
     if not config.validate_ek_registration:
-        logger.warn("EK validation is disabled!")
+        logger.warning("EK validation is disabled!")
     if not config.revocation_webhook:
-        logger.warn("No revocation webhook is specified. Systems will not be notified when a revocation occurs!")
+        logger.warning("No revocation webhook is specified. Systems will not be notified when a revocation occurs!")
 
     if config.mode == "relaxed":
         # Wait for registrar to come available
@@ -70,8 +70,8 @@ async def startup() -> None:
             try:
                 requests.get(REGISTRAR_URL, verify=False, cert=(config.registrar.tls_cert, config.registrar.tls_priv_key))
                 break
-            except requests.exceptions.ConnectionError as e:
+            except requests.exceptions.ConnectionError:
                 time.sleep(1)
-                pass
+
         logger.info("Starting loop")
         await logic.relaxed_loop()

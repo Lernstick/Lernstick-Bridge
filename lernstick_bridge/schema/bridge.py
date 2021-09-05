@@ -2,6 +2,7 @@
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
+# pylint: disable=too-few-public-methods
 import datetime
 from typing import Optional
 

@@ -21,7 +21,7 @@ def get_agent(agent_id: str) -> Optional[bridge.Agent]:
     """
     try:
         agent = db.query(models.Agent).filter(models.Agent.agent_id == agent_id).first()
-    except SQLAlchemyError as e:
+    except SQLAlchemyError:
         return None
 
     if not agent:

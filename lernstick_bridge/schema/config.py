@@ -4,6 +4,7 @@ Copyright 2021 Thore Sommer
 
 Static configuration for the bridge
 '''
+# pylint: disable=too-few-public-methods
 
 from datetime import timedelta
 from ipaddress import IPv4Address
@@ -14,7 +15,7 @@ from pydantic import BaseModel, BaseSettings
 
 
 class Tenant(BaseModel):
-    accept_tpm_hash_algs: List[str] = ["sha512","sha384","sha256", "sha1"]
+    accept_tpm_hash_algs: List[str] = ["sha512", "sha384", "sha256", "sha1"]
     accept_tpm_encryption_algs: List[str] = ["ecc", "rsa"]
     accept_tpm_signing_algs: List[str] = ["ecschnorr", "rsassa"]
     ima_pcrs: List[int] = [10]
@@ -42,10 +43,12 @@ class Config(BaseSettings):
     keylime_verifier: str = "https://localhost:8881"
     tpm_cert_store: Optional[Path] = None
     mode: str = "strict"  # TODO replace with Enum
-    validate_ek_registration: bool = True  # Validate EK Cert when a agent is registered. Only disable for debugging or if some devices dont have an EK cert
+    # Validate EK Cert when a agent is registered. Only disable for debugging or if some devices dont have an EK cert
+    validate_ek_registration: bool = True
     db_url: str = "sqlite:///./sql_app.db"
     revocation_webhook: Optional[str] = None
-    measured_boot_policy: Optional[str] = None  # Make sure that the keylime.conf includes the correct module to parse the policy
+    # Make sure that the keylime.conf includes the correct module to parse the policy
+    measured_boot_policy: Optional[str] = None
     retry_attempts: int = 4
     tenant: Tenant = Tenant()
     verifier: Verifier
@@ -53,4 +56,4 @@ class Config(BaseSettings):
 
     class Config:
         env_file = ".env"
-        env_file_encoding = 'utf-8'
+        env_file_encoding = "utf-8"

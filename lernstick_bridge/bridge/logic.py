@@ -22,7 +22,7 @@ from lernstick_bridge.utils import RetrySession
 def activate_agent(agent_id: str) -> bool:
     if config.mode == "strict":
         return _strict_activate_agent(agent_id)
-    elif config.mode == "relaxed":
+    if config.mode == "relaxed":
         return _relaxed_activate_agent(agent_id)
     logger.error(f"Unknown mode {config.mode}. Cannot activate agent {agent_id}!")
     return False
@@ -31,13 +31,13 @@ def activate_agent(agent_id: str) -> bool:
 def deactivate_agent(agent_id: str) -> bool:
     if config.mode == "strict":
         return _strict_deactivate_agent(agent_id)
-    elif config.mode == "relaxed":
+    if config.mode == "relaxed":
         return _relaxed_deactivate_agent(agent_id)
     logger.error(f"Unknown mode {config.mode}. Cannot deactivate agent {agent_id}!")
     return False
 
 
-def _strict_activate_agent(agent_id: str) -> bool:
+def _strict_activate_agent(agent_id: str) -> bool:  # pylint: disable=too-many-return-statements
     """
     Try to add a agent for remote attestation
     :param agent_id:

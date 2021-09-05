@@ -2,6 +2,7 @@
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
+# pylint: disable=too-few-public-methods
 
 from sqlalchemy import Column, DateTime, String
 
@@ -32,6 +33,3 @@ class ActiveAgent(Base):
     agent_id = Column(String, primary_key=True, index=True)
     token = Column(String, unique=True, index=True)  # Tokens are assumed to be be unique so we enforce that in the database
     timeout = Column(DateTime, nullable=True)  # If timeout is NULL it means that the agent is always valid.
-
-
-
