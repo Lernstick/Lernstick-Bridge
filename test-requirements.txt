@@ -1,2 +1,7 @@
 mypy
+types-pyOpenSSL
+types-requests
+types-ipaddress
+types-cryptography
 sqlalchemy-stubs
+pylint
