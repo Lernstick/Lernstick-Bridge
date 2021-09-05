@@ -30,9 +30,8 @@ class AgentBridge(BaseModel):
     _token: Optional[Token] = PrivateAttr(None)
     _pubkey: Optional[str] = PrivateAttr(None)  # Caching the pubkey to reduce requests to the agent
 
-    @classmethod
     @root_validator(pre=True)
-    def get_agent(cls, values: Any) -> Any:
+    def get_agent(cls, values: Any) -> Any:  # pylint: disable=no-self-argument, no-self-use
         is_strict = values.get("strict")
         agent_id = values.get("agent_id")
         assert agent_id and (is_strict is not None),  "Agent id and mode need to be added"
@@ -53,7 +52,7 @@ class AgentBridge(BaseModel):
         Validates the EK against the database in strict mode and otherwise against the certificate store.
         For validating the AIK call do_quote.
         """
-        assert self.registrar_data
+        assert self.registrar_data is not None
         if self.strict:
             if self.agent is None:
                 return False
