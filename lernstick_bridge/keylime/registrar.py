@@ -38,7 +38,7 @@ def get_agents() -> List[str]:
         res = session.get(f"{REGISTRAR_URL}/agents")
         data = res.json()
         if "results" not in data or "uuids" not in data["results"]:
-            logger.error(f"Couldn't get agents from registrar returning empty list: {e}")
+            logger.error(f"Couldn't get agents from registrar returning empty list!")
             return []
         return data["results"]["uuids"]
     except requests.exceptions.RequestException as e:

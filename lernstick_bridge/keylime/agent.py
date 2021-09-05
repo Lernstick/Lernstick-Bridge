@@ -15,7 +15,7 @@ import requests
 import subprocess
 
 from tempfile import NamedTemporaryFile
-from typing import Tuple, Optional
+from typing import Any, Tuple, Optional
 
 from lernstick_bridge.schema.keylime import Payload
 from lernstick_bridge.keylime import util
@@ -37,7 +37,7 @@ def do_quote(agent_url: str, aik: str) -> Tuple[bool, Optional[str]]:
     quote = results["quote"]
 
     (tpm2b_pub, _) = tpm2_pytss.TPM2B_PUBLIC().unmarshal(base64.b64decode(aik))
-    aik = tpm2b_pub.to_pem()
+    pem_aik = tpm2b_pub.to_pem()
 
     if quote[0] != "r":
         raise ValueError("Quote is invalid")
@@ -52,11 +52,11 @@ def do_quote(agent_url: str, aik: str) -> Tuple[bool, Optional[str]]:
     sig_val = zlib.decompress(base64.b64decode(quote_vals[1]))
     pcr_val = zlib.decompress(base64.b64decode(quote_vals[2]))
 
-    quote_valid = _check_qoute(aik, quote_val, sig_val, pcr_val, nonce, hash_alg)
+    quote_valid = _check_qoute(pem_aik, quote_val, sig_val, pcr_val, nonce, hash_alg)
     return quote_valid, results["pubkey"]
 
 
-def _check_qoute(aik: bytes, quote_data: bytes, signature_data: bytes, pcr_data: bytes, nonce: str, hash_alg: str):
+def _check_qoute(aik: bytes, quote_data: bytes, signature_data: bytes, pcr_data: bytes, nonce: str, hash_alg: str) -> bool:
     """
     Validates a quote using tpm2_checkqoute.
     :param aik: AIK PEM encoded
@@ -93,7 +93,7 @@ def _check_qoute(aik: bytes, quote_data: bytes, signature_data: bytes, pcr_data:
         return ret.returncode == 0
 
 
-def get_pubkey(agent_url: str):
+def get_pubkey(agent_url: str) -> Optional[str]:
     try:
         res = RetrySession().get(f"{agent_url}/keys/pubkey")
 
@@ -108,7 +108,7 @@ def get_pubkey(agent_url: str):
         return None
 
 
-def post_payload_u(agent_id, agent_url, payload: Payload, key=None):
+def post_payload_u(agent_id: str, agent_url: str, payload: Payload, key: Any = None) -> bool:
     """
     Posts the encrypted payload and the u key to the agent
     :param agent_id: The uuid of the agent

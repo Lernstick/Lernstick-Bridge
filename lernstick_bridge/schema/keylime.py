@@ -7,7 +7,7 @@ Copyright 2021 Thore Sommer
 
 import json
 from pydantic import BaseModel, Json
-from typing import Optional
+from typing import Optional, Union
 from ipaddress import IPv4Address
 
 from lernstick_bridge.config import config
@@ -35,7 +35,7 @@ class AgentVerifierRequest(BaseModel):
     vtpm_policy: str = "{\"mask\": \"0x408000\"}"  # We don't use vtpms so just always add an empty mask
     metadata: str = json.dumps({})
     allowlist: str = json.dumps({})
-    mb_refstate: str = None
+    mb_refstate: Optional[str] = None
     ima_sign_verification_keys: str = json.dumps([])
     revocation_key: str = ""  # We don't use the revocation feature, so we specify always an empty string
     accept_tpm_hash_algs: str = json.dumps(config.tenant.accept_tpm_hash_algs)
@@ -54,7 +54,7 @@ class RevocationMsg(BaseModel):
 
 
 class RevocationResp(BaseModel):
-    msg: Json[RevocationMsg]
+    msg: Union[Json[RevocationMsg], RevocationMsg]  # type: ignore
     signature: Optional[str]
 
 

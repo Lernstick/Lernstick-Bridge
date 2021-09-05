@@ -17,12 +17,14 @@ callback_router = APIRouter()  # This router is only used for documentation purp
 
 
 @callback_router.post("{$revocation_webhook}", description="Sends revocation message to exam system")
-def send_revocation_message(msg: bridge.RevocationMessage):
+def send_revocation_message(msg: bridge.RevocationMessage) -> None:
     pass
 
 
 @router.post("/revocation", callbacks=callback_router.routes)
-def revocation(message: keylime.RevocationResp, background_task: BackgroundTasks):
+def revocation(message: keylime.RevocationResp, background_task: BackgroundTasks) -> bool:
+    assert isinstance(message.msg, keylime.RevocationMsg)  # Make mypy happy because Json type default to str
+
     if not crud.get_active_agent(message.msg.agent_id):
         logger.info(f"Received for agent {message.msg.agent_id}, but this agent is not active. Ignoring...")
         return False

@@ -4,7 +4,7 @@ Copyright 2021 Thore Sommer
 '''
 import datetime
 
-from pydantic import BaseModel, PrivateAttr
+from pydantic import BaseModel, PrivateAttr, Field
 from typing import Optional
 from lernstick_bridge.schema.keylime import Payload
 from lernstick_bridge.keylime import util
@@ -52,16 +52,11 @@ class ActiveAgent(BaseModel):
 class Token(BaseModel):
     """Verification token."""
     agent_id: str
-    token: str
+    token: str = Field(default_factory=util.get_random_nonce)
 
     _payload: Optional[Payload] = PrivateAttr(None)  # The payload is not added to the database!
 
-    def __init__(self, agent_id: str, token: str = None):
-        if token is None:
-            token = util.get_random_nonce(20)
-        super().__init__(agent_id=agent_id, token=token)
-
-    def to_payload(self):
+    def to_payload(self) -> Payload:
         if not self._payload:
             self._payload = util.generate_payload(self.token)
         return self._payload

@@ -7,6 +7,7 @@ Copyright 2021 Thore Sommer
 import glob
 import os
 from pathlib import Path
+from typing import Optional
 
 import OpenSSL.crypto
 from OpenSSL.crypto import X509Store, \
@@ -16,7 +17,7 @@ from OpenSSL.crypto import X509Store, \
     FILETYPE_PEM, FILETYPE_ASN1
 
 
-def validate_ek(ek_cert: bytes, cert_store: X509Store):
+def validate_ek(ek_cert: bytes, cert_store: X509Store) -> bool:
     """
     Validates Edorsment Key Certificate against a Certificate store
     :param ek_cert: The ek certficate DER encoded as bytes
@@ -32,7 +33,7 @@ def validate_ek(ek_cert: bytes, cert_store: X509Store):
         return False
 
 
-def create_ca_store(path: Path) -> X509Store:
+def create_ca_store(path: Optional[Path]) -> X509Store:
     """
     Creates a X509 certificate store from given path.
     Openssl CAfile path only works with PEM certificates so we implement our own loading.

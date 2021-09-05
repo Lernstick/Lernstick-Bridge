@@ -18,6 +18,7 @@ from lernstick_bridge.schema.keylime import RevocationMsg
 from lernstick_bridge.schema.bridge import RevocationMessage
 from lernstick_bridge.utils import RetrySession
 
+
 def activate_agent(agent_id: str) -> bool:
     if config.mode == "strict":
         return _strict_activate_agent(agent_id)
@@ -36,7 +37,7 @@ def deactivate_agent(agent_id: str) -> bool:
     return False
 
 
-def _strict_activate_agent(agent_id: str) -> bool :
+def _strict_activate_agent(agent_id: str) -> bool:
     """
     Try to add a agent for remote attestation
     :param agent_id:
@@ -45,36 +46,37 @@ def _strict_activate_agent(agent_id: str) -> bool :
     """
     try:
         agent = AgentBridge(agent_id=agent_id, strict=True)
+
+        if not agent.valid_ek():
+            logger.error(f"EK for agent {agent_id} was invalid!")
+            return False
+
+        if not agent.do_qoute():
+            logger.error(f"Quote form agent {agent_id} was invalid!")
+            return False
+
+        token = agent.deploy_token()
+        if token is None:
+            logger.error(f"Token could not be deployed on agent {agent_id}")
+            return False
+        logger.debug(f"Deployed token: {token}")
+
+        if not agent.add_to_verifier():
+            logger.error(f"Agent {agent_id} could not be added to verifier")
+            agent.remove_from_verifier()
+            return False
+
+        if not agent.activate():
+            logger.error(f"Couldn't activate agent {agent_id}")
+            agent.remove_from_verifier()
+            return False
+
+        logger.info(f"Successfully activated agent: {agent_id}")
+        return True
+
     except ValueError as e:
         logger.error(f"Was not able to collect agent data for id: {agent_id}! {e}")
         return False
-
-    if not agent.valid_ek():
-        logger.error(f"EK for agent {agent_id} was invalid!")
-        return False
-
-    if not agent.do_qoute():
-        logger.error(f"Quote form agent {agent_id} was invalid!")
-        return False
-
-    token = agent.deploy_token()
-    if token is None:
-        logger.error(f"Token could not be deployed on agent {agent_id}")
-        return False
-    logger.debug(f"Deployed token: {token}")
-
-    if not agent.add_to_verifier():
-        logger.error(f"Agent {agent_id} could not be added to verifier")
-        agent.remove_from_verifier()
-        return False
-
-    if not agent.activate():
-        logger.error(f"Couldn't activate agent {agent_id}")
-        agent.remove_from_verifier()
-        return False
-
-    logger.info(f"Successfully activated agent: {agent_id}")
-    return True
 
 
 def _relaxed_activate_agent(agent_id: str) -> bool:
@@ -91,7 +93,7 @@ def _relaxed_activate_agent(agent_id: str) -> bool:
     return False
 
 
-def _strict_deactivate_agent(agent_id: str):
+def _strict_deactivate_agent(agent_id: str) -> bool:
     """
 
     :param agent_id:
@@ -107,7 +109,7 @@ def _strict_deactivate_agent(agent_id: str):
     return True
 
 
-def _relaxed_deactivate_agent(agent_id: str):
+def _relaxed_deactivate_agent(agent_id: str) -> bool:
     if not crud.get_active_agent(agent_id):
         return False  # TODO should be a not found
 
@@ -119,7 +121,7 @@ def _relaxed_deactivate_agent(agent_id: str):
     return True
 
 
-def _relaxed_handle_agents():
+def _relaxed_handle_agents() -> None:
     """
      - Get's the agents from the registrar and tries to activate them.
      - Checks if an active agent has reached its timeout and removes it.
@@ -128,8 +130,8 @@ def _relaxed_handle_agents():
     """
     active_agents = crud.get_active_agents()
     active_ids = set()
-    for agent in active_agents:
-        active_ids.add(agent.agent_id)
+    for active_agent in active_agents:
+        active_ids.add(active_agent.agent_id)
     registrar_agents = registrar.get_agents()
     # TODO This should be done in parallel and sequential so that a single agent can block this loop
     for agent_id in registrar_agents:
@@ -137,51 +139,52 @@ def _relaxed_handle_agents():
             continue
         try:
             agent = AgentBridge(agent_id=agent_id, strict=False)
+
+            if not agent.valid_ek() and config.validate_ek_registration:
+                logger.error(f"EK for {agent_id} couldn't be validated!")
+                continue
+
+            if not agent.do_qoute():
+                logger.error(f"Quote of {agent_id} was invalid!")
+                continue
+
+            if not agent.deploy_token():
+                logger.error(f"Token couldn't be deployed on {agent_id}!")
+                continue
+            if not agent.add_to_verifier():
+                logger.error(f"Couldn't add agent for agent {agent_id} to verifier!")
+                continue
+
+            timeout = datetime.datetime.now() + config.tenant.relaxed_timeout
+            if not agent.activate(timeout=timeout):
+                continue
+            logger.info(f"Successfully activated agent: {agent_id}")
+
         except ValueError as e:
             logger.error(f"Was not able to collect agent data for id: {agent_id}! {e}")
             continue
 
-        if not agent.valid_ek() and config.validate_ek_registration:
-            logger.error(f"EK for {agent_id} couldn't be validated!")
+    for active_agent in active_agents:
+        if active_agent.timeout is None:
             continue
-
-        if not agent.do_qoute():
-            logger.error(f"Quote of {agent_id} was invalid!")
+        if datetime.datetime.now() < active_agent.timeout:
             continue
-
-        if not agent.deploy_token():
-            logger.error(f"Token couldn't be deployed on {agent_id}!")
-            continue
-        if not agent.add_to_verifier():
-            logger.error(f"Couldn't add agent for agent {agent_id} to verifier!")
-            continue
-
-        timeout = datetime.datetime.now() + config.tenant.relaxed_timeout
-        if not agent.activate(timeout=timeout):
-            continue
-        logger.info(f"Successfully activated agent: {agent_id}")
-
-    for agent in active_agents:
-        if agent.timeout is None:
-            continue
-        if datetime.datetime.now() < agent.timeout:
-            continue
-        logger.info(f"Deactivating agent {agent.agent_id} due to automatic timeout.")
-        _relaxed_deactivate_agent(agent.agent_id)
+        logger.info(f"Deactivating agent {active_agent.agent_id} due to automatic timeout.")
+        _relaxed_deactivate_agent(active_agent.agent_id)
 
     time.sleep(10)  # TODO make this configurable
 
 
-async def relaxed_loop():
+async def relaxed_loop() -> None:
     """Initial PoC for an loop that automatically adds and removes agents"""
-    async def loop():
+    async def loop() -> None:
         while True:
             await run_in_threadpool(_relaxed_handle_agents)
 
     ensure_future(loop())
 
 
-def send_revocation(message: RevocationMsg):
+def send_revocation(message: RevocationMsg) -> None:
     url = config.revocation_webhook
     # Check if a webhook is specified
     if not url:

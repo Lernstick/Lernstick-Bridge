@@ -4,6 +4,8 @@ Copyright 2021 Thore Sommer
 '''
 import requests
 
+from typing import Any, Dict, Optional
+
 from lernstick_bridge.schema.keylime import AgentVerifierRequest
 from lernstick_bridge.config import config, VERIFIER_URL
 from lernstick_bridge.bridge_logger import logger
@@ -23,7 +25,7 @@ def add_agent(agent_id: str, verifier_request: AgentVerifierRequest) -> bool:
         return False
 
 
-def get_agent(agent_id: str):
+def get_agent(agent_id: str) -> Optional[Dict[Any,Any]]:
     try:
         res = session.get(f"{VERIFIER_URL}/agents/{agent_id}")
         data = res.json()
@@ -36,9 +38,10 @@ def get_agent(agent_id: str):
         return None
 
 
-def get_agent_state(agent_id: str):
+def get_agent_state(agent_id: str) -> Any:
     # TODO this will change when the tagging proposal is implemented
     agent_data = get_agent(agent_id)
+    assert agent_data is not None
     return agent_data["operational_state"]
 
 
@@ -51,9 +54,3 @@ def delete_agent(agent_id: str) -> bool:
     except requests.exceptions.RequestException as e:
         logger.error(f"Couldn't delete agent {agent_id} from verifier: {e}")
         return False
-
-
-def add_allowlist():
-    pass
-
-

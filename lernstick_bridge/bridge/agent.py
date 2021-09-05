@@ -7,7 +7,7 @@ import base64
 import datetime
 import json
 
-from typing import Optional
+from typing import Any, Dict, Optional
 from pydantic import BaseModel, PrivateAttr, root_validator
 
 from lernstick_bridge import config
@@ -25,13 +25,13 @@ class AgentBridge(BaseModel):
     strict: bool
     agent_id: str
     agent: Optional[Agent]
-    registrar_data: AgentRegistrar
+    registrar_data: Optional[AgentRegistrar]
 
     _token: Optional[Token] = PrivateAttr(None)
     _pubkey: Optional[str] = PrivateAttr(None)  # Caching the pubkey to reduce requests to the agent
 
     @root_validator(pre=True)
-    def get_agent(cls, values):
+    def get_agent(cls, values: Any) -> Any:
         is_strict = values.get("strict")
         agent_id = values.get("agent_id")
         assert agent_id and (is_strict is not None),  "Agent id and mode need to be added"
@@ -47,17 +47,21 @@ class AgentBridge(BaseModel):
         values['agent'] = bridge_agent
         return values
 
-    def valid_ek(self):
+    def valid_ek(self) -> bool:
         """
         Validates the EK against the database in strict mode and otherwise against the certificate store.
         For validating the AIK call do_quote.
         """
+        assert self.registrar_data
         if self.strict:
+            if self.agent is None:
+                return False
             return self.agent.ek_cert == self.registrar_data.ekcert
 
         return ek.validate_ek(base64.b64decode(self.registrar_data.ekcert), config.cert_store)
 
-    def do_qoute(self):
+    def do_qoute(self) -> bool:
+        assert self.registrar_data
         valid, pubkey = agent.do_quote(self.get_url(), self.registrar_data.aik_tpm)
         if valid:
             self._pubkey = pubkey
@@ -68,15 +72,16 @@ class AgentBridge(BaseModel):
         Construct agent contact url from IP and port
         :return: string that is the agent contac url
         """
+        assert self.registrar_data
         return f"http://{self.registrar_data.ip}:{self.registrar_data.port}/{config.config.keylime_api_entrypoint}"
 
-    def deploy_token(self) -> Token:
+    def deploy_token(self) -> Optional[Token]:
         """
         Deploys the verification token onto the agent
-        :return: The deployed token
+        :return: The deployed token or None
         """
         if not self._token:
-            token = Token(self.agent_id)
+            token = Token(agent_id=self.agent_id)
             payload = token.to_payload()
             if agent.post_payload_u(self.agent_id, self.get_url(), payload):
                 self._token = token
@@ -88,8 +93,9 @@ class AgentBridge(BaseModel):
         :return: True if successful
         """
         if not self._token:
-            ValueError("Token must be deployed before adding agent to the verifier")
+            raise ValueError("Token must be deployed before adding agent to the verifier")
 
+        assert self.registrar_data
         request = AgentVerifierRequest(
             v=base64.b64encode(self._token.to_payload().v).decode("utf-8"),
             cloudagent_ip=self.registrar_data.ip,
@@ -100,7 +106,7 @@ class AgentBridge(BaseModel):
         )
         return verifier.add_agent(self.agent_id, request)
 
-    def remove_from_verifier(self):
+    def remove_from_verifier(self) -> bool:
         return verifier.delete_agent(self.agent_id)
 
     def activate(self, timeout: datetime.datetime = None) -> bool:
@@ -109,25 +115,29 @@ class AgentBridge(BaseModel):
         :param timeout: (Optional) If set the agent gets removed in relaxed mode if the timeout is exceeded.
         :return: True if activation was successful
         """
+        if self._token is None:
+            return False
+
         crud.add_active_agent(self.agent_id, self._token.token, timeout)
         return True
 
-    def _get_tpm_policy(self):
+    def _get_tpm_policy(self) -> Dict[str, Any]:
         """
         Construct tpm policy with the correct mask
         :return: tpm_policy dict for the verifier
         """
-        output = {}
+        output: Dict[str, Any] = {}
         # if self.strict:
             # TODO add all always static pcrs
             # output["0"] = self.agent.pcr_0  # Firmware PCR
-        output["mask"] = util.generate_mask(output, measured_boot=True, ima=False)
+
+        output["mask"] = util.generate_mask(None, measured_boot=True, ima=False)
         return output
 
-    def _get_ima_policy(self):
+    def _get_ima_policy(self) -> Dict[str, Any]:
         """
         :return: IMA include and exclude lists
         """
-        allowlist = {}
-        excludelist = {}
+        allowlist: Dict[str, Any] = {}
+        excludelist: Dict[str, Any] = {}
         return {'allowlist': allowlist, 'excludelist': excludelist}

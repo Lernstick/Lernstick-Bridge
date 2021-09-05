@@ -38,7 +38,7 @@ class Config(BaseSettings):
     keylime_api_entrypoint: str = "v1.0"
     keylime_registrar: str = "https://localhost:8891"
     keylime_verifier: str = "https://localhost:8881"
-    tpm_cert_store: Path = None
+    tpm_cert_store: Optional[Path] = None
     mode: str = "strict"  # TODO replace with Enum
     validate_ek_registration: bool = True  # Validate EK Cert when a agent is registered. Only disable for debugging or if some devices dont have an EK cert
     db_url: str = "sqlite:///./sql_app.db"

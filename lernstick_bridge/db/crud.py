@@ -35,12 +35,12 @@ def get_agents() -> List[bridge.Agent]:
     return parse_obj_as(List[bridge.Agent], agents)
 
 
-def add_agent(agent: bridge.Agent):
+def add_agent(agent: bridge.Agent) -> bridge.Agent:
     db_agent = models.Agent(**dict(agent))
     db.add(db_agent)
     db.commit()
     db.refresh(db_agent)
-    return db_agent
+    return bridge.Agent.from_orm(db_agent)
 
 
 def delete_agent(agent_id: str) -> bool:
@@ -50,7 +50,7 @@ def delete_agent(agent_id: str) -> bool:
     return True
 
 
-def update_agent(agent: bridge.Agent):
+def update_agent(agent: bridge.Agent) -> bool:
     db_agent = db.query(models.Agent).filter(models.Agent.agent_id == agent.agent_id).first()
     for key, value in agent.dict().items():
         if key is not None:
@@ -60,7 +60,7 @@ def update_agent(agent: bridge.Agent):
     return True
 
 
-def add_active_agent(agent_id: str, token: str, timeout=None):
+def add_active_agent(agent_id: str, token: str, timeout: Optional[datetime.datetime] = None) -> bool:
     if get_active_agent(agent_id):
         return False
 

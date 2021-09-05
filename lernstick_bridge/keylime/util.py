@@ -16,6 +16,8 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import (Cipher, algorithms, modes)
 
+from typing import Any, Dict, Optional
+
 from lernstick_bridge.schema.keylime import Payload
 from lernstick_bridge.config import config
 AES_BLOCK_SIZE = 16
@@ -34,7 +36,7 @@ def generate_payload(input: str) -> Payload:
     return Payload(k=k, v=v, u=u, encrypted_data=encrypted_data, plain_data=input)
 
 
-def get_random_nonce(length=20):
+def get_random_nonce(length: int = 20) -> str:
     """
     Returns a random alphanumeric string. Default length is 20.
     :param length: Length of the nonce
@@ -44,13 +46,13 @@ def get_random_nonce(length=20):
     return "".join([valid_chars[int(x) % len(valid_chars)] for x in generate_random_key(length)])
 
 
-def do_hmac(key: bytes, value: str):
+def do_hmac(key: bytes, value: str) -> str:
     h = hmac.new(key, msg=None, digestmod=hashlib.sha384)
     h.update(value.encode('utf-8'))
     return h.hexdigest()
 
 
-def _bitwise_xor(a: bytes, b: bytes):
+def _bitwise_xor(a: bytes, b: bytes) -> bytes:
     assert (len(a) == len(b))
     out = bytearray()
     for i, j in zip(bytearray(a), bytearray(b)):
@@ -58,11 +60,11 @@ def _bitwise_xor(a: bytes, b: bytes):
     return out
 
 
-def generate_random_key(length: int):
+def generate_random_key(length: int) -> bytes:
     return os.urandom(length)
 
 
-def _encrypt(input: str, key: bytes):
+def _encrypt(input: str, key: bytes) -> str:
     """
     Encrypts the input with the key using AES encryption
     :param input: to encrypt
@@ -72,12 +74,12 @@ def _encrypt(input: str, key: bytes):
     """
     iv = generate_random_key(AES_BLOCK_SIZE)
     encryptor = Cipher(algorithms.AES(key), modes.GCM(
-        iv), backend=default_backend()).encryptor()
+        iv, None, None), backend=default_backend()).encryptor()
     encrypted_input = encryptor.update(input.encode('ascii')) + encryptor.finalize()
-    return base64.b64encode(iv + encrypted_input + encryptor.tag)
+    return base64.b64encode(iv + encrypted_input + encryptor.tag).decode("utf-8")  # type: ignore
 
 
-def rsa_encrypt(key, message: bytes) -> bytes:
+def rsa_encrypt(key: Any, message: bytes) -> bytes:
     """
     Encrypts an message with a RSA key.
     Is used for the payload mechanism.
@@ -92,7 +94,7 @@ def rsa_encrypt(key, message: bytes) -> bytes:
                                                                               label=None))
 
 
-def generate_mask(tpm_policy: dict = {}, measured_boot: bool = True, ima: bool = True):
+def generate_mask(tpm_policy: Optional[Dict[int, Any]] = None, measured_boot: bool = True, ima: bool = True) -> str:
     """
     Generates the mask needed for all the checked pcrs
     :param tpm_policy: static tpm policy
@@ -100,6 +102,9 @@ def generate_mask(tpm_policy: dict = {}, measured_boot: bool = True, ima: bool =
     :param ima: enable pcr for IMA
     :return: mask for enabling that features
     """
+    if tpm_policy is None:
+        tpm_policy = {}
+
     pcrs = list(tpm_policy.keys())
     if measured_boot:
         # TODO enabling this currently breaks something in Keylime

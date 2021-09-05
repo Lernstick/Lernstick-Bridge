@@ -16,7 +16,7 @@ _retries = Retry(
 
 
 class RetrySession(Session):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         adapter = HTTPAdapter(max_retries=_retries)
         self.mount("http://", adapter)
