@@ -44,7 +44,7 @@ def _strict_activate_agent(agent_id: str) -> bool :
 
     """
     try:
-        agent = AgentBridge(agent_id, strict=True)
+        agent = AgentBridge(agent_id=agent_id, strict=True)
     except ValueError as e:
         logger.error(f"Was not able to collect agent data for id: {agent_id}! {e}")
         return False
@@ -136,8 +136,8 @@ def _relaxed_handle_agents():
         if agent_id in active_ids:
             continue
         try:
-            agent = AgentBridge(agent_id, strict=False)
-        except ValueError:
+            agent = AgentBridge(agent_id=agent_id, strict=False)
+        except ValueError as e:
             logger.error(f"Was not able to collect agent data for id: {agent_id}! {e}")
             continue
 

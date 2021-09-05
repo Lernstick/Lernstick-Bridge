@@ -6,9 +6,9 @@ Copyright 2021 Thore Sommer
 import base64
 import datetime
 import json
-from typing import Optional
 
-from pydantic import BaseModel, PrivateAttr
+from typing import Optional
+from pydantic import BaseModel, PrivateAttr, root_validator
 
 from lernstick_bridge import config
 from lernstick_bridge.db import crud
@@ -30,18 +30,22 @@ class AgentBridge(BaseModel):
     _token: Optional[Token] = PrivateAttr(None)
     _pubkey: Optional[str] = PrivateAttr(None)  # Caching the pubkey to reduce requests to the agent
 
-    def __init__(self, agent_id: str, strict=True):
+    @root_validator(pre=True)
+    def get_agent(cls, values):
+        is_strict = values.get("strict")
+        agent_id = values.get("agent_id")
+        assert agent_id and (is_strict is not None),  "Agent id and mode need to be added"
+
         registrar_data = registrar.get_agent(agent_id)
-        agent = None
-        if registrar_data is None:
-            raise ValueError("Didn't found agent in registrar")
+        assert registrar_data, "Didn't found agent in registrar"
 
-        if strict:
-            agent = crud.get_agent(agent_id)
-            if agent is None:
-                raise ValueError("Didn't found agent in database")
-
-        super().__init__(agent_id=agent_id, strict=strict, agent=agent, registrar_data=registrar_data)
+        bridge_agent = None
+        if is_strict:
+            bridge_agent = crud.get_agent(agent_id)
+            assert bridge_agent, "Didn't found agent in database"
+        values['registrar_data'] = registrar_data
+        values['agent'] = bridge_agent
+        return values
 
     def valid_ek(self):
         """
