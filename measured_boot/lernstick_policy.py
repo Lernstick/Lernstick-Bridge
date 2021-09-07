@@ -79,11 +79,17 @@ class LernstickPolicy(policies.Policy):
             re.compile('BootOrder|Boot[0-9a-fA-F]+'),
             tests.AcceptAll()))
 
+        # EV_EFI_ACTION and EV_SEPARATOR do not any meaningful information
         dispatcher.set((4, 'EV_EFI_ACTION'), tests.AcceptAll())
         for pcr in range(8):
             dispatcher.set((pcr, 'EV_SEPARATOR'), tests.AcceptAll())
-        dispatcher.set((7, 'EV_EFI_VARIABLE_AUTHORITY'), tests.AcceptAll())
+
+        # Ignore all GPT related events
         dispatcher.set((5, 'EV_EFI_GPT_EVENT'), tests.AcceptAll())
+
+        # Ignore shim CA and sbat entries. We already checked if it is the correct binary
+        dispatcher.set((7, 'EV_EFI_VARIABLE_AUTHORITY'), tests.AcceptAll())
+
 
         # Validate that only the correct shim, grub and kernel was used
         dispatcher.set((4, 'EV_EFI_BOOT_SERVICES_APPLICATION'),
