@@ -3,7 +3,7 @@ This document describes on howto set up a test environment for the Lernstick Bri
 permanently stored. For setting up Lernstick Bridge for production see  (TODO).
 
 ## Requirements
- * A server running Docker and docker-compose
+ * A server running recent versions of Docker and docker-compose (tested with Docker 20.10.8 and docker-compose 1.29.2) 
  * A device with a TPM, Secure Boot and Debian 11 installed
  * The device and server should be in the same network
 
@@ -14,7 +14,7 @@ but this doesn't work in our case. Please run: `./setup_ca.sh`.
 This will create an folder `cv_ca` which contains the shared CA.
 
 ## Configuring the Bridge and Keylime
-For Keylime the project ships with a pre configured `keylime.conf` which shouldn't need any changes.
+For Keylime the project ships with a pre-configured `keylime.conf` which shouldn't need any changes.
 A development configuration for the Bridge can be found under `.docker_env` which works out of the box.
 
 Depending on Bridge usage the following values might need some change:
@@ -31,10 +31,11 @@ Just run `docker-compose -up`.
  * Download Debian 11 from: https://www.debian.org/download
  * Install Debian 11 on the device with Secure Boot enabled 
  * Install Keylime packages
-   * Download the Debian packages 
-   * Install them with `apt install ./python3-keylime-lib*.deb ./python3-keylime-agent*.deb`
+   * Either install them from the Lernstick repository with `apt install python3-keylime-agent python3-keylime-defaultconf`
+   * Or build them locally (see below) and
+     install them with `apt install ./python3-keylime-lib*.deb ./python3-keylime-defaultconf*.deb ./python3-keylime-agent*.deb`
 
-Changes to `/etc/keylime-agent.conf`:
+Changes to `/etc/keylime.conf`:
 
  * `[cloud_agent]` section
    * `cloudagent_ip` change to `0.0.0.0`
@@ -54,14 +55,10 @@ the Bridge.
 Usage: `python3 register_agent.py "http://BRIDGE_IP:BRIDGE_PORT"`
 
 ## Building the Keylime Debian Package
-Note prebuild images can be found here: TODO
-
-We need a current git build because we currently depend on features not included in the latest release.
+For the agent Keylime versions 6.2.0 later will work with the Lernstick Bridge.
 
 * Get Debian packaging from: `https://github.com/utkarsh2102/python-keylime`
-* Get the latest Keylime version: `https://github.com/keylime/keylime`
-* Copy `debian` directory into `keylime` directory
-* Install build dependencies TODO
-* Create new version TODO
-* Build package `dpk-buildpackage -uc -us`
-* Upload
+* Build package `dpk-buildpackage -uc -us -b`
+
+# Known Issues
+* Agent won't restart: Kill the agent with `systemctl kill keylime_agen.service` and then restart it.
