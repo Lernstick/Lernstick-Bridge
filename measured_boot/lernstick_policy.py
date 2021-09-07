@@ -10,19 +10,38 @@ from .policies import RefState
 # Copy into keylime.elchecking
 
 
-
 class LernstickPolicy(policies.Policy):
     relevant_pcrs = frozenset(list(range(10)) + [14])
 
     # Regex that should cover all the valid kernel commandline options in our configuration
-    """
-    linux $DEFAULT_KERNEL $DEFAULT_APPEND locales=$LOCALES keyboard-layouts=$KEYBOARD desktop=$DESKTOP $LIVE_MEDIA $PERSISTENCE_MEDIA $PERSISTENCE $SWAP $QUIET custom_options $CUSTOM_OPTIONS
-    initrd $DEFAULT_INITRD
-    """
-    kernel_cmd_regex = re.compile("/live/vmlinuz ")
+
+    # Valid locales currently supported by the Lernstick
+    locales = [r"de_CH\.UTF-8", r"de_AT\.UTF-8", r"de_DE\.UTF-8", r"fr_CH\.UTF-8", r"it_CH\.UTF-8", r"en_US\.UTF-8",
+               r"es_AR\.UTF-8", r"es_ES\.UTF-8", r"pt_BR\.UTF-8", r"sq_AL\.UTF-8", r"ku_TR\.UTF-8", r"ru_RU\.UTF-8",
+               r"fa_IR"]
+    # Supported keyboard layout configurations
+    keyboard_layouts = [r"ch,ch\(fr\),de,fr", r"ch\(fr\),ch,fr,de", r"de,ch,ch\(fr\),fr", r"it,ch,ch(fr),fr",
+                        r"us,ch,ch\(fr\),de", r"es,us,ch,ch\(fr\)", r"br,pt,us,ch", r"ru,ch,de,us", r"al,us,ch,de"]
+    # Supported desktops (only text or GNOME are used in the exam environment)
+    desktops = ["gnome nottyautologin", "no"]
+    # default live-boot configuration
+    default_append = "boot=live nonetworking config persistence-encryption=luks,none lernstick_efi_boot noeject"
+    # live-media settings
+    live_media = ["", " live-media=removable live-media-timeout=10", " live-media=usb live-media-timeout=10"]
+    # persistence setup
+    persistence_media = ["", " persistence-media=removable"]
+    persistence = ["", " persistence", " persistence persistence-read-only"]
+    # swap options
+    swap = ["", " swapon"]
+    quiet = ["", " quiet splash"]
+
+    kernel_cmd_regex = f"/live/vmlinuz {default_append} locales=({'|'.join(locales)})" \
+                       f" keyboard-layouts=({'|'.join(keyboard_layouts)}) desktop=({'|'.join(desktops)})" \
+                       f"({'|'.join(live_media)})({'|'.join(persistence_media)})({'|'.join(persistence)})" \
+                       f"({'|'.join(swap)})({'|'.join(quiet)}) custom_options"
 
     def get_relevant_pcrs(self) -> typing.FrozenSet[int]:
-            return self.relevant_pcrs
+        return self.relevant_pcrs
 
     def refstate_to_test(self, refstate: RefState) -> tests.Test:
         # If emtpy refstate is supplied we default to accept all for testing
@@ -57,15 +76,12 @@ class LernstickPolicy(policies.Policy):
               tests.DigestTest(refstate["boot"]["vmlinuz"])]
         bsa_test = tests.TupleTest(*tt)
 
-
-
         events_final = tests.DelayToFields(
             tests.FieldsTest(
                 bsas=bsa_test,
 
-                ),
+            ),
             'bsas')
-
 
         # A list of allowed digests for firmware from device driver appears
         # in PCR2, event type EV_EFI_BOOT_SERVICES_DRIVER. Here we will just
@@ -90,7 +106,6 @@ class LernstickPolicy(policies.Policy):
         # Ignore shim CA and sbat entries. We already checked if it is the correct binary
         dispatcher.set((7, 'EV_EFI_VARIABLE_AUTHORITY'), tests.AcceptAll())
 
-
         # Validate that only the correct shim, grub and kernel was used
         dispatcher.set((4, 'EV_EFI_BOOT_SERVICES_APPLICATION'),
                        events_final.get('bsas'))
@@ -113,12 +128,11 @@ class LernstickPolicy(policies.Policy):
 
         dispatcher.set((9, 'EV_IPL'), tests.Or(*grub_tests, vmlinuz, initrd))
 
-        # Allow all Grub commands to be run and validate the kernel cmd-line
+        # Allow all Grub commands to be run and validate the kernel command line
         dispatcher.set((8, 'EV_IPL'), tests.FieldTest('Event', tests.FieldTest('String', tests.Or(
             tests.RegExp('grub_cmd: .*', re.DOTALL),
             tests.And(
-                tests.RegExp('kernel_cmdline: .*'))
-                # TODO check for actual valid regex!
+                tests.RegExp(f'kernel_cmdline: {self.kernel_cmd_regex}'))
         ))))
 
         dispatcher.set((5, 'EV_EFI_ACTION'), tests.AcceptAll())
@@ -134,4 +148,3 @@ class LernstickPolicy(policies.Policy):
 
 
 policies.register('lernstick', LernstickPolicy())
-
