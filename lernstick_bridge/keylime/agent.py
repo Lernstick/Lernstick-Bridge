@@ -4,8 +4,6 @@ Copyright 2017 Massachusetts Institute of Technology.
 Copyright 2021 Thore Sommer
 '''
 import base64
-# Some parts of the parsing are very similar to the original Keylime implementation so this module is Apache 2.0 licenced
-# and the copyright notice is added.
 import json
 import subprocess
 import zlib
@@ -15,11 +13,16 @@ from typing import Any, Optional, Tuple
 import cryptography.hazmat.primitives.serialization
 import requests
 import tpm2_pytss
+import yaml
 
 from lernstick_bridge.bridge_logger import logger
+from lernstick_bridge.config import config
 from lernstick_bridge.keylime import util
 from lernstick_bridge.schema.keylime import Payload
 from lernstick_bridge.utils import RetrySession
+
+# Some parts of the parsing are very similar to the original Keylime implementation so this module is Apache 2.0 licenced
+# and the copyright notice is added.
 
 
 def do_quote(agent_url: str, aik: str) -> Tuple[bool, Optional[str]]:  # pylint: disable=too-many-locals
@@ -30,32 +33,45 @@ def do_quote(agent_url: str, aik: str) -> Tuple[bool, Optional[str]]:  # pylint:
     except requests.exceptions.RequestException as e:
         logger.error(f"Getting the quote from the agent {agent_url} failed: {e}")
         return False, None
-
-    results = ret.json()["results"]
-    hash_alg = results["hash_alg"]
-    quote = results["quote"]
+    try:
+        results = ret.json()["results"]
+        hash_alg = results["hash_alg"]
+        quote = results["quote"]
+        pubkey = results["pubkey"]
+    except KeyError as e:
+        logger.error(f"Response from agent {agent_url} is missing data: {e}")
+        return False, None
 
     (tpm2b_pub, _) = tpm2_pytss.TPM2B_PUBLIC().unmarshal(base64.b64decode(aik))
     pem_aik = tpm2b_pub.to_pem()
 
     if quote[0] != "r":
-        raise ValueError("Quote is invalid")
+        logger.error(f"Quote form {agent_url} is invalid. Not prefixed with 'r'.")
+        return False, None
 
     quote = quote[1:]
 
     quote_vals = quote.split(":")
     if len(quote_vals) != 3:
-        raise ValueError("Quote is invalid!")
+        logger.error(f"Quote form {agent_url} is invalid. Does not contain 3 values.")
+        return False, None
 
     quote_val = zlib.decompress(base64.b64decode(quote_vals[0]))
     sig_val = zlib.decompress(base64.b64decode(quote_vals[1]))
     pcr_val = zlib.decompress(base64.b64decode(quote_vals[2]))
 
-    quote_valid = _check_qoute(pem_aik, quote_val, sig_val, pcr_val, nonce, hash_alg)
-    return quote_valid, results["pubkey"]
+    quote_valid, data_pcr_hash = _check_qoute(pem_aik, quote_val, sig_val, pcr_val, nonce, hash_alg)
+    computed = util.data_extend(pubkey.encode("utf-8"), hash_alg)
+    if computed != data_pcr_hash:
+        logger.error(f"data_pcr does not match hash.\n"
+                     f"Got: {data_pcr_hash}\n"
+                     f"Expected: {computed}")
+        return False, None
+    return quote_valid, pubkey
 
 
-def _check_qoute(aik: bytes, quote_data: bytes, signature_data: bytes, pcr_data: bytes, nonce: str, hash_alg: str) -> bool:  # pylint: disable=too-many-arguments
+def _check_qoute(aik: bytes, quote_data: bytes, signature_data: bytes, pcr_data: bytes, nonce: str, hash_alg: str) \
+        -> Tuple[bool, Optional[str]]:  # pylint: disable=too-many-arguments
     """
     Validates a quote using tpm2_checkqoute.
     :param aik: AIK PEM encoded
@@ -88,8 +104,22 @@ def _check_qoute(aik: bytes, quote_data: bytes, signature_data: bytes, pcr_data:
              "-s", sig_file.name,
              "-f", pcr_file.name,
              "-g", hash_alg,
-             "-q", nonce], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        return ret.returncode == 0
+             "-q", nonce], capture_output=True)
+        if ret.returncode != 0:
+            logger.error(f"tpm2_checkquote failed with: {ret.stderr.decode('utf-8')}")
+            return False, None
+
+        data = yaml.safe_load(ret.stdout.decode())
+        if data is None:
+            logger.error(f"tpm2_checkquote output couldn't be parsed: {ret.stdout.decode()}")
+            return False, None
+
+        try:
+            # [2:] removes the 0x prefix from the hex value
+            return True, hex(data["pcrs"][hash_alg][config.tenant.data_pcr])[2:]
+        except (KeyError, TypeError, ValueError) as e:
+            logger.error(f"tpm2_checkquote didn't provided hash for data pcr: {e}")
+            return False, None
 
 
 def get_pubkey(agent_url: str) -> Optional[str]:

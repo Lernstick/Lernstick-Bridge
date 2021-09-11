@@ -19,6 +19,7 @@ class Tenant(BaseModel):
     accept_tpm_encryption_algs: List[str] = ["ecc", "rsa"]
     accept_tpm_signing_algs: List[str] = ["ecschnorr", "rsassa"]
     ima_pcrs: List[int] = [10]
+    data_pcr: int = 16  # Keylime uses by default the Debug PCR to bin data to a quote
     measuredboot_pcrs: List[int] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15] # TODO check if we actually need all
     relaxed_timeout: timedelta = timedelta(seconds=60)
 

@@ -6,6 +6,7 @@ Copyrigyt 2021 Thore Sommer
 # Keylime specific crypto and other utility functions.
 # Some code is nearly the same as in Keylime which is Apache 2.0
 import base64
+import codecs
 import hashlib
 import hmac
 import os
@@ -116,3 +117,17 @@ def generate_mask(tpm_policy: Optional[Dict[int, Any]] = None, measured_boot: bo
     for i in set(pcrs):
         out = out | (1 << int(i))
     return hex(out)
+
+
+def data_extend(data: bytes, hash_alg: Optional[str] = "sha256") \
+        -> Optional[str]:
+    """
+    Calculates the PCR extend from reset with the hash of data
+    """
+
+    if hash_alg == "sha256":
+        start_hash = b"0" * (256 // 4)
+        data_hash = hashlib.sha256(data).digest()
+        return hashlib.sha256(codecs.decode(start_hash, "hex_codec") + data_hash).hexdigest()
+
+    return None

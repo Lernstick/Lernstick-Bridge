@@ -3,5 +3,6 @@ types-pyOpenSSL
 types-requests
 types-ipaddress
 types-cryptography
+types-PyYAML
 sqlalchemy-stubs
 pylint
