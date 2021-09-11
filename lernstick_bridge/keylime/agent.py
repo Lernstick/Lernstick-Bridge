@@ -159,3 +159,16 @@ def post_payload_u(agent_id: str, agent_url: str, payload: Payload, key: Any = N
         logger.error(f"Could post payload to agent {agent_id}: {e}")
         return False
     return res.status_code == 200
+
+
+def verify_key(agent_url: str, k: bytes) -> bool:
+    try:
+        challenge = util.get_random_nonce()
+        res = RetrySession().get(f"{agent_url}/keys/verity?challenge={challenge}")
+        agent_hmac = res.json()["results"]["hmac"]
+        return agent_hmac == util.do_hmac(k, challenge)
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Couldn't connect to agent {agent_url}: {e}")
+    except (ValueError, TypeError) as e:
+        logger.error(f"Response data for agent {agent_url} couldn't be parsed: {e}")
+    return False

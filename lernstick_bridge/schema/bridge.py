@@ -63,6 +63,11 @@ class Token(BaseModel):
             self._payload = util.generate_payload(self.token)
         return self._payload
 
+    def get_payload_k(self) -> Optional[bytes]:
+        if not self._payload:
+            return None
+        return self._payload.k
+
     class Config:
         orm_mode = True
 

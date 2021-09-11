@@ -5,12 +5,16 @@ Copyright 2021 Thore Sommer
 
 import base64
 import datetime
+import functools
 import json
+import threading
+import time
 from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, PrivateAttr, root_validator
 
-from lernstick_bridge import config
+from lernstick_bridge.bridge_logger import logger
+from lernstick_bridge.config import MB_POLICY, cert_store, config
 from lernstick_bridge.db import crud
 from lernstick_bridge.keylime import agent, ek, registrar, util, verifier
 from lernstick_bridge.schema.bridge import Agent, Token
@@ -58,7 +62,7 @@ class AgentBridge(BaseModel):
                 return False
             return self.agent.ek_cert == self.registrar_data.ekcert
 
-        return ek.validate_ek(base64.b64decode(self.registrar_data.ekcert), config.cert_store)
+        return ek.validate_ek(base64.b64decode(self.registrar_data.ekcert), cert_store)
 
     def do_quote(self) -> bool:
         assert self.registrar_data
@@ -73,7 +77,7 @@ class AgentBridge(BaseModel):
         :return: string that is the agent contac url
         """
         assert self.registrar_data
-        return f"http://{self.registrar_data.ip}:{self.registrar_data.port}/{config.config.keylime_api_entrypoint}"
+        return f"http://{self.registrar_data.ip}:{self.registrar_data.port}/{config.keylime_api_entrypoint}"
 
     def deploy_token(self) -> Optional[Token]:
         """
@@ -102,9 +106,32 @@ class AgentBridge(BaseModel):
             cloudagent_port=self.registrar_data.port,
             tpm_policy=json.dumps(self._get_tpm_policy()),
             allowlist=json.dumps(AgentBridge._get_ima_policy()),
-            mb_refstate=json.dumps(config.MB_POLICY)
+            mb_refstate=json.dumps(MB_POLICY)
         )
         return verifier.add_agent(self.agent_id, request)
+
+    def create_token_callback(self) -> None:
+        """
+        Notify the exam system if the token derivation failed.
+        This happens if the verifier couldn't verify the state of an agent.
+        We need this option in strict mode because Keylime won't send notifications
+        for agent that where never verified in the first place.
+        """
+        url = config.revocation_webhook
+        if url == "":
+            return
+
+        def callback(agent_url: str, webhook_url: str, key: bytes) -> None:
+            time.sleep(15)
+            # TODO get state from verifier before
+            if not agent.verify_key(agent_url, key):
+                logger.error(f"Key for agent {agent_url} couldn't be retrieved")
+                # TODO implement actual callback
+                del webhook_url
+
+        assert self._token is not None
+        callback_thread = threading.Thread(target=functools.partial(callback, self.get_url(), url, self._token.get_payload_k()))
+        callback_thread.start()
 
     def remove_from_verifier(self) -> bool:
         return verifier.delete_agent(self.agent_id)
