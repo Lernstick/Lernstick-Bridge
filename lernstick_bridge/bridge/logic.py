@@ -190,11 +190,11 @@ def send_revocation(message: RevocationMsg) -> None:
     if not url:
         return
     session = RetrySession()
-    # Dummy values will be replaced with real ones once the tagging part in Keylime is merged.
+
     new_msg = RevocationMessage(agent_id=message.agent_id,
-                                event_id="default",
-                                severity_level="1",
-                                context="DEFAULT")
+                                event_id=message.event_id,
+                                severity_label=message.severity_label,
+                                context=message.context)
     logger.info(f"Sending revocation message: {message}")
     try:
         session.post(url, data=new_msg)

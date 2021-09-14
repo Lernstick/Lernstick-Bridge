@@ -52,6 +52,9 @@ class RevocationMsg(BaseModel):
     tpm_policy: str
     meta_data: str
     event_time: str
+    event_id: Optional[str]
+    severity_label: Optional[str]
+    context: Optional[Json]
 
 
 class RevocationResp(BaseModel):

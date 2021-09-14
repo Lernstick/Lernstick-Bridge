@@ -6,7 +6,7 @@ Copyright 2021 Thore Sommer
 import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field, PrivateAttr
+from pydantic import BaseModel, Field, Json, PrivateAttr
 
 from lernstick_bridge.keylime import util
 from lernstick_bridge.schema.keylime import Payload
@@ -69,9 +69,9 @@ class Token(BaseModel):
 
 class RevocationMessage(BaseModel):
     agent_id: str
-    event_id: str
-    severity_level: str
-    context: str
+    event_id: Optional[str]
+    severity_label: Optional[str]
+    context: Optional[Json]
 
 
 class HTTPError(BaseModel):
