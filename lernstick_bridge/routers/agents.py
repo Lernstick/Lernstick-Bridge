@@ -40,7 +40,8 @@ def delete_agent(agent_id: str) -> Dict[Any, Any]:
     db_agent = crud.get_agent(agent_id)
     if not db_agent:
         raise HTTPException(status_code=404, detail="Agent is not in the database")
-    crud.delete_agent(agent_id)
+    if not crud.delete_agent(agent_id):
+        raise HTTPException(status_code=500, detail="Agent could not be deleted")
     return {}
 
 

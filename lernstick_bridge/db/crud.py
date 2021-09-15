@@ -43,8 +43,10 @@ def add_agent(agent: bridge.Agent) -> bridge.Agent:
 
 
 def delete_agent(agent_id: str) -> bool:
-    agent = get_agent(agent_id)
-    db.delete(agent)
+    db_agent = db.query(models.Agent).filter(models.Agent.agent_id == agent_id).first()
+    if db_agent is None:
+        return False
+    db.delete(db_agent)
     db.commit()
     return True
 
