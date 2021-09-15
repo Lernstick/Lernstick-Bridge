@@ -11,7 +11,7 @@ import hashlib
 import hmac
 import os
 import string
-from typing import Any, Dict, Optional
+from typing import Any, List, Optional
 
 import cryptography
 from cryptography.hazmat.backends import default_backend
@@ -96,25 +96,23 @@ def rsa_encrypt(key: Any, message: bytes) -> bytes:
                            label=None))
 
 
-def generate_mask(tpm_policy: Optional[Dict[int, Any]] = None, measured_boot: bool = True, ima: bool = True) -> str:
+def generate_mask(used_pcrs: Optional[List[int]], measured_boot: bool = True, ima: bool = True) -> str:
     """
     Generates the mask needed for all the checked pcrs
-    :param tpm_policy: static tpm policy
+    :param used_pcrs: used pcrs by the static tpm policy
     :param measured_boot: enable pcrs for measured boot
     :param ima: enable pcr for IMA
     :return: mask for enabling that features
     """
-    if tpm_policy is None:
-        tpm_policy = {}
+    if used_pcrs is None:
+        used_pcrs = []
 
-    pcrs = list(tpm_policy.keys())
     if measured_boot:
-        # TODO enabling this currently breaks something in Keylime
-        pcrs += config.tenant.measuredboot_pcrs
+        used_pcrs += config.tenant.measuredboot_pcrs
     if ima:
-        pcrs += config.tenant.ima_pcrs
+        used_pcrs += config.tenant.ima_pcrs
     out = 0
-    for i in set(pcrs):
+    for i in set(used_pcrs):
         out = out | (1 << int(i))
     return hex(out)
 

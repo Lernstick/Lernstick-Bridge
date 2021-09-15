@@ -126,13 +126,14 @@ class AgentBridge(BaseModel):
         Construct tpm policy with the correct mask
         :return: tpm_policy dict for the verifier
         """
+        assert self.agent
         output: Dict[str, Any] = {}
+        used_pcrs = None
         if self.strict:
-            pass
-            # TODO check for some static PCRs
-            # output["0"] = self.agent.pcr_0  # Firmware PCR
+            output["0"] = self.agent.pcr_0  # Firmware PCR
+            used_pcrs = [0]
 
-        output["mask"] = util.generate_mask(None, measured_boot=True, ima=False)
+        output["mask"] = util.generate_mask(used_pcrs, measured_boot=True, ima=False)
         return output
 
     @staticmethod
