@@ -50,14 +50,14 @@ def get_pcrs():
     out = subprocess.run(["tpm2_pcrread"], capture_output=True)
     pcrs = yaml.safe_load(out.stdout.decode())["sha256"]
     return {
-        "pcr_0": pcrs[0],
-        "pcr_1": pcrs[1],
-        "pcr_2": pcrs[2],
-        "pcr_3": pcrs[3],
-        "pcr_4": pcrs[4],
-        "pcr_5": pcrs[5],
-        "pcr_6": pcrs[6],
-        "pcr_7": pcrs[7]
+        "pcr_0": hex(pcrs[0]),
+        "pcr_1": hex(pcrs[1]),
+        "pcr_2": hex(pcrs[2]),
+        "pcr_3": hex(pcrs[3]),
+        "pcr_4": hex(pcrs[4]),
+        "pcr_5": hex(pcrs[5]),
+        "pcr_6": hex(pcrs[6]),
+        "pcr_7": hex(pcrs[7])
     }
 
 
