@@ -62,10 +62,11 @@ def do_quote(agent_url: str, aik: str) -> Tuple[bool, Optional[str]]:  # pylint:
 
     quote_valid, data_pcr_hash = _check_qoute(pem_aik, quote_val, sig_val, pcr_val, nonce, hash_alg)
     computed = util.data_extend(pubkey.encode("utf-8"), hash_alg)
-    if computed != data_pcr_hash:
+    # tpm2-tools hash no leading zeros while hashlib has some we remove them from both
+    if computed is None or data_pcr_hash is None or computed.lstrip("0") != data_pcr_hash.lstrip("0"):
         logger.error(f"data_pcr does not match hash.\n"
-                     f"Got: {data_pcr_hash}\n"
-                     f"Expected: {computed}")
+                     f"Got\t: {data_pcr_hash}\n"
+                     f"Expected\t: {computed}")
         return False, None
     return quote_valid, pubkey
 
