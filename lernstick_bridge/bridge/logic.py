@@ -191,6 +191,7 @@ def send_revocation(message: RevocationMsg) -> None:
         return
     session = RetrySession()
 
+    assert isinstance(message.context, dict)
     new_msg = RevocationMessage(agent_id=message.agent_id,
                                 event_id=message.event_id,
                                 severity_label=message.severity_label,

@@ -4,9 +4,9 @@ Copyright 2021 Thore Sommer
 '''
 # pylint: disable=too-few-public-methods
 import datetime
-from typing import Optional
+from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Field, Json, PrivateAttr
+from pydantic import BaseModel, Field, PrivateAttr
 
 from lernstick_bridge.keylime import util
 from lernstick_bridge.schema.keylime import Payload
@@ -71,7 +71,7 @@ class RevocationMessage(BaseModel):
     agent_id: str
     event_id: Optional[str]
     severity_label: Optional[str]
-    context: Optional[Json]
+    context: Optional[Dict[Any, Any]]
 
 
 class HTTPError(BaseModel):
