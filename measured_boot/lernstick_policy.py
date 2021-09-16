@@ -126,7 +126,11 @@ class LernstickPolicy(policies.Policy):
         vmlinuz = tests.FieldTest('Event', tests.FieldTest('String', tests.RegExp(f"/live/vmlinuz")))
         initrd = tests.FieldTest('Event', tests.FieldTest('String', tests.RegExp(f"/live/initrd.img")))
 
-        dispatcher.set((9, 'EV_IPL'), tests.Or(*grub_tests, vmlinuz, initrd))
+        # Ignore grub.cfg hash for now because we want to persist language and keyboard settings
+        # In the future we ship a list with all possible hashes
+        grub_cfg = tests.FieldTest('Event', tests.FieldTest('String', tests.RegExp("/boot/grub/grub.cfg")))
+
+        dispatcher.set((9, 'EV_IPL'), tests.Or(*grub_tests, grub_cfg, vmlinuz, initrd))
 
         # Allow all Grub commands to be run and validate the kernel command line
         dispatcher.set((8, 'EV_IPL'), tests.FieldTest('Event', tests.FieldTest('String', tests.Or(
