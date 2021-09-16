@@ -102,3 +102,8 @@ def verify_token(token: str) -> bridge.Token:
     if not db_token:
         raise HTTPException(status_code=404, detail="Token does not belong to any agent")
     return db_token
+
+
+@router.get("/agents/active", response_model=List[bridge.ActiveAgent], tags=["agent_attestation"])
+def list_active_agents() -> List[bridge.ActiveAgent]:
+    return crud.get_active_agents()
