@@ -123,8 +123,14 @@ class LernstickPolicy(policies.Policy):
             grub_tests.append(test)
 
         # Check if the measured vmlinuz and initrd from Grub matches our expected values
-        vmlinuz = tests.FieldTest('Event', tests.FieldTest('String', tests.RegExp(f"/live/vmlinuz")))
-        initrd = tests.FieldTest('Event', tests.FieldTest('String', tests.RegExp(f"/live/initrd.img")))
+        vmlinuz = tests.And(
+            tests.DigestTest(refstate["kernel"]["vmlinuz"]),
+            tests.FieldTest('Event', tests.FieldTest('String', tests.RegExp(f"/live/vmlinuz")))
+        )
+        initrd = tests.And(
+            tests.DigestTest(refstate["kernel"]["initrd"]),
+            tests.FieldTest('Event', tests.FieldTest('String', tests.RegExp(f"/live/initrd.img")))
+        )
 
         # Ignore grub.cfg hash for now because we want to persist language and keyboard settings
         # In the future we ship a list with all possible hashes
