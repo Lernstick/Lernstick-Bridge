@@ -128,12 +128,13 @@ class AgentBridge(BaseModel):
         """
         output: Dict[str, Any] = {}
         used_pcrs = None
+        use_ima_pcr = config.IMA_POLICY is not None
         if self.strict:
             assert self.agent
             output["0"] = self.agent.pcr_0  # Firmware PCR
             used_pcrs = [0]
 
-        output["mask"] = util.generate_mask(used_pcrs, measured_boot=True, ima=False)
+        output["mask"] = util.generate_mask(used_pcrs, measured_boot=True, ima=use_ima_pcr)
         return output
 
     @staticmethod
@@ -141,6 +142,5 @@ class AgentBridge(BaseModel):
         """
         :return: IMA include and exclude lists
         """
-        allowlist: Dict[str, Any] = {}
         excludelist: Dict[str, Any] = {}
-        return {"allowlist": allowlist, "excludelist": excludelist}
+        return {"allowlist": config.IMA_POLICY, "exclude": excludelist}

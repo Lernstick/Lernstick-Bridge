@@ -50,6 +50,7 @@ class Config(BaseSettings):
     revocation_webhook: Optional[str] = None
     # Make sure that the keylime.conf includes the correct module to parse the policy
     measured_boot_policy: Optional[str] = None
+    ima_policy: Optional[str] = None
     retry_attempts: int = 4
     tenant: Tenant = Tenant()
     verifier: Verifier

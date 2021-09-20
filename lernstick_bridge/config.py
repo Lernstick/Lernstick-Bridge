@@ -17,3 +17,8 @@ MB_POLICY = {}
 if config.measured_boot_policy is not None:
     with open(config.measured_boot_policy, encoding="utf-8") as mb_file:
         MB_POLICY = json.load(mb_file)
+
+IMA_POLICY = None
+if config.ima_policy is not None:
+    with open(config.ima_policy, encoding="utf-8") as ima_file:
+        IMA_POLICY = json.load(ima_file)
