@@ -10,7 +10,6 @@ import zlib
 from tempfile import NamedTemporaryFile
 from typing import Any, Optional, Tuple
 
-import cryptography.hazmat.primitives.serialization
 import requests
 import tpm2_pytss
 import yaml
@@ -124,6 +123,7 @@ def _check_qoute(aik: bytes, quote_data: bytes, signature_data: bytes, pcr_data:
 
 
 def get_pubkey(agent_url: str) -> Optional[str]:
+    logger.warning(f"Getting public key from agent {agent_url} without quote validation.")
     try:
         res = RetrySession().get(f"{agent_url}/keys/pubkey")
 
@@ -132,7 +132,7 @@ def get_pubkey(agent_url: str) -> Optional[str]:
             logger.error(f"Failed to get public key from agent {agent_url}")
             return None
 
-        return cryptography.hazmat.primitives.serialization.load_pem_public_key(data["results"]["pubkey"].encode("utf-8"))
+        return util.str_to_rsapubkey(data["results"]["pubkey"])
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to get public key from agent {agent_url}: {e}")
         return None

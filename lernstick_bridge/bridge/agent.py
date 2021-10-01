@@ -64,7 +64,7 @@ class AgentBridge(BaseModel):
         assert self.registrar_data
         valid, pubkey = agent.do_quote(self.get_url(), self.registrar_data.aik_tpm)
         if valid:
-            self._pubkey = pubkey
+            self._pubkey = util.str_to_rsapubkey(pubkey)
         return valid
 
     def get_url(self) -> str:
@@ -83,7 +83,7 @@ class AgentBridge(BaseModel):
         if not self._token:
             token = Token(agent_id=self.agent_id)
             payload = token.to_payload()
-            if agent.post_payload_u(self.agent_id, self.get_url(), payload):
+            if agent.post_payload_u(self.agent_id, self.get_url(), payload, self._pubkey):
                 self._token = token
         return self._token
 

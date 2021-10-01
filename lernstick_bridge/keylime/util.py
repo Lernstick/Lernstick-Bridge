@@ -129,3 +129,9 @@ def data_extend(data: bytes, hash_alg: Optional[str] = "sha256") \
         return hashlib.sha256(codecs.decode(start_hash, "hex_codec") + data_hash).hexdigest()
 
     return None
+
+
+def str_to_rsapubkey(key_str: Optional[str]) -> Optional[str]:
+    if key_str is None:
+        return None
+    return cryptography.hazmat.primitives.serialization.load_pem_public_key(key_str.encode("utf-8"))
