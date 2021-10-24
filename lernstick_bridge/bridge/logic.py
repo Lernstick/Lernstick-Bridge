@@ -20,6 +20,12 @@ from lernstick_bridge.utils import RetrySession
 
 
 def activate_agent(agent_id: str) -> bool:
+    """
+    Activate an agent.
+
+    :param agent_id: the UUID of the agent
+    :return: True if activation was successful
+    """
     if config.mode == "strict":
         return _strict_activate_agent(agent_id)
     if config.mode == "relaxed":
@@ -29,6 +35,12 @@ def activate_agent(agent_id: str) -> bool:
 
 
 def deactivate_agent(agent_id: str) -> bool:
+    """
+    Deactivate an agent.
+
+    :param agent_id:  the UUID of the agent
+    :return: True if deactivation was successful
+    """
     if config.mode == "strict":
         return _strict_deactivate_agent(agent_id)
     if config.mode == "relaxed":
@@ -39,10 +51,17 @@ def deactivate_agent(agent_id: str) -> bool:
 
 def _strict_activate_agent(agent_id: str) -> bool:  # pylint: disable=too-many-return-statements
     """
-    Try to add a agent for remote attestation
-    :param agent_id:
-    :return:
+    Try to add a agent for Remote Attesation in strict mode.
+    Following steps are done:
+     - Get agent data from Keylime Registrar and database
+     - validate the EK against the one stored in the DB
+     - validate the identity quote
+     - deploy the token
+     - add the agent to the verifier
+     - activate the agent in the bridge
 
+    :param agent_id: the UUID of the agent
+    :return: True if activation was successful
     """
     try:
         agent = AgentBridge(agent_id=agent_id, strict=True)
@@ -81,8 +100,9 @@ def _strict_activate_agent(agent_id: str) -> bool:  # pylint: disable=too-many-r
 
 def _relaxed_activate_agent(agent_id: str) -> bool:
     """
-    Activates agent in relaxed mode.
-    :param agent_id: agent ID of agent to activate
+    Activates agent in relaxed mode which just removes the timeout from the agent.
+
+    :param agent_id: the UUID of the agent
     :return: True if successful
 
     """
@@ -95,9 +115,10 @@ def _relaxed_activate_agent(agent_id: str) -> bool:
 
 def _strict_deactivate_agent(agent_id: str) -> bool:
     """
+    Deactivate an agent in strict mode.
 
-    :param agent_id:
-    :return:
+    :param agent_id: the UUID of the agent
+    :return: True if successful and False if either the agent is not found or deactivation failed.
     """
     if not crud.get_active_agent(agent_id):
         logger.error(f"Agent {agent_id} is not active so it cannot be deactivated!")
@@ -110,6 +131,12 @@ def _strict_deactivate_agent(agent_id: str) -> bool:
 
 
 def _relaxed_deactivate_agent(agent_id: str) -> bool:
+    """
+    Deactivate an agent in relaxed mode.
+
+    :param agent_id: the UUID of the agent
+    :return: True if successful and False if either the agent is not found or deactivation failed.
+    """
     if not crud.get_active_agent(agent_id):
         return False  # TODO should be a not found
 
@@ -126,6 +153,7 @@ def _relaxed_handle_agents() -> None:
      - Get's the agents from the registrar and tries to activate them.
      - Checks if an active agent has reached its timeout and removes it.
      Note: It also removes it from the registrar currently. The agent must register itself again if it should be activated.
+
     :return: None
     """
     active_agents = crud.get_active_agents()
@@ -185,6 +213,12 @@ async def relaxed_loop() -> None:
 
 
 def send_revocation(message: RevocationMsg) -> None:
+    """
+    Sends a revocation message to the exam system using a webhook.
+
+    :param message: revocation message from Keylime
+    :return: None
+    """
     url = config.revocation_webhook
     # Check if a webhook is specified
     if not url:

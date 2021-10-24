@@ -16,7 +16,8 @@ from OpenSSL.crypto import (FILETYPE_ASN1, FILETYPE_PEM, X509Store, X509StoreCon
 
 def validate_ek(ek_cert: bytes, cert_store: X509Store) -> bool:
     """
-    Validates Edorsment Key Certificate against a Certificate store
+    Validates Edorsment Key Certificate against a Certificate store.
+
     :param ek_cert: The ek certficate DER encoded as bytes
     :param cert_store: X509Store to check against
     :return: True if valid
@@ -34,6 +35,7 @@ def create_ca_store(path: Optional[Path]) -> X509Store:
     """
     Creates a X509 certificate store from given path.
     Openssl CAfile path only works with PEM certificates so we implement our own loading.
+
     :param path: string to the CA directory path
     :return: X509Store
     """

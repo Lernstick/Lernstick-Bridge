@@ -15,6 +15,9 @@ from pydantic import BaseModel, BaseSettings
 
 
 class Tenant(BaseModel):
+    """
+    Configuration for the tenant part. (Which we reimplement with the bridge).
+    """
     accept_tpm_hash_algs: List[str] = ["sha512", "sha384", "sha256", "sha1"]
     accept_tpm_encryption_algs: List[str] = ["ecc", "rsa"]
     accept_tpm_signing_algs: List[str] = ["ecschnorr", "rsassa"]
@@ -25,18 +28,27 @@ class Tenant(BaseModel):
 
 
 class Verifier(BaseModel):
+    """
+    TLS configuration for the Keylime Verifier.
+    """
     tls_cert: str  # certificate for client TLS auth
     tls_priv_key: str  # key for for client TLS auth
     tls_cert_server: str  # certificate of the verifier
 
 
 class Registrar(BaseModel):
+    """
+    TLS configuration for the Keylime Registrar.
+    """
     tls_cert: str  # certificate for client TLS auth
     tls_priv_key: str  # key for for client TLS auth
     tls_cert_server: str  # certificate of the registrar
 
 
 class Config(BaseSettings):
+    """
+    General configuration of the bridge.
+    """
     ip: IPv4Address = IPv4Address("127.0.0.1")
     port: int = 8080
     keylime_api_entrypoint: str = "v1.0"
@@ -56,6 +68,6 @@ class Config(BaseSettings):
     verifier: Verifier
     registrar: Registrar
 
-    class Config:
+    class Config:  # pylint: disable=missing-class-docstring
         env_file = ".env"
         env_file_encoding = "utf-8"

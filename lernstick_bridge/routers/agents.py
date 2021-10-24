@@ -18,6 +18,11 @@ router = APIRouter()
 
 @router.get("/agents", response_model=List[bridge.Agent], tags=["agent_management"])
 def list_agents() -> List[bridge.Agent]:
+    """
+    List all agents.
+
+    :return: List of agents
+    """
     return crud.get_agents()
 
 
@@ -25,6 +30,13 @@ def list_agents() -> List[bridge.Agent]:
              responses={409: {"model": bridge.HTTPError, "description": "Agent was already in the database"},
                         412: {"model": bridge.HTTPError, "description": "EK of the agent couldn't be validated."}})
 def create_agent(agent: bridge.AgentCreate) -> bridge.Agent:
+    """
+    Create a new agent at the bridge.
+    If EK validation is enabled, the ek_cert will be validated against the certificate store.
+
+    :param agent: the agent to create
+    :return: the agent that was created
+    """
     db_agent = crud.get_agent(agent.agent_id)
     if db_agent:
         raise HTTPException(status_code=409, detail="Agent already in database")
@@ -37,6 +49,12 @@ def create_agent(agent: bridge.AgentCreate) -> bridge.Agent:
 @router.delete("/agents/{agent_id}", tags=["agent_management"],
                responses={404: {"model": bridge.HTTPError, "description": "Agent is not in the database"}})
 def delete_agent(agent_id: str) -> Dict[Any, Any]:
+    """
+    Delete a agent from the bridge.
+
+    :param agent_id: the agent UUID
+    :return: Empty dict if successful
+    """
     db_agent = crud.get_agent(agent_id)
     if not db_agent:
         raise HTTPException(status_code=404, detail="Agent is not in the database")
@@ -48,6 +66,13 @@ def delete_agent(agent_id: str) -> Dict[Any, Any]:
 @router.put("/agents/{agent_id}", tags=["agent_management"],
             responses={404: {"model": bridge.HTTPError, "description": "Agent is not in the database"}})
 def update_agent(agent_id: str, agent: bridge.Agent) -> Dict[Any, Any]:
+    """
+    Update an agent at the bridge.
+
+    :param agent_id: the agent UUID
+    :param agent: the agent with fields not None to update
+    :return: empty dict if successful
+    """
     if not crud.get_agent(agent_id):
         raise HTTPException(status_code=404, detail="Agent is not in the database")
     crud.update_agent(agent)
@@ -58,6 +83,12 @@ def update_agent(agent_id: str, agent: bridge.Agent) -> Dict[Any, Any]:
              responses={400: {"model": bridge.HTTPError, "description": "Agent couldn't be activated"},
                         409: {"model": bridge.HTTPError, "description": "Agent already active"}})
 def activate_agent(agent_id: str) -> Dict[Any, Any]:
+    """
+    Activate agent at the bridge.
+
+    :param agent_id: the agent UUID
+    :return: empty dict if successful
+    """
     agent = crud.get_active_agent(agent_id)
     if agent and agent.timeout is None:
         raise HTTPException(status_code=409, detail="Agent already active")
@@ -71,6 +102,16 @@ def activate_agent(agent_id: str) -> Dict[Any, Any]:
 @router.get("/agents/{agent_id}/status", response_model=bridge.AgentStatus, tags=["agent_attestation"],
             responses={404: {"model": bridge.HTTPError, "description": "Agent not active nor in the database"}})
 def agent_status(agent_id: str) -> bridge.AgentStatus:
+    """
+    Get the agent status at the bridge.
+    status might be:
+     - active: the agent is activated at the bridge
+     - auto-active: the agent was automatically activated and has a timeout (only relaxed mode)
+     - inactive: agent was created at the bridge but currently not active
+
+    :param agent_id: the agent UUID
+    :return: Agent status
+    """
     agent = crud.get_active_agent(agent_id)
     if agent:
         status = "active"
@@ -88,6 +129,12 @@ def agent_status(agent_id: str) -> bridge.AgentStatus:
              responses={404: {"model": bridge.HTTPError, "description": "Agent not found in active database"},
                         500: {"model": bridge.HTTPError, "description": "Deactivation was not successful"}})
 def deactivate_agent(agent_id: str) -> Dict[Any, Any]:
+    """
+    Deactivate agent at the bridge.
+
+    :param agent_id: the agent UUID
+    :return: empty dict if successful
+    """
     if not crud.get_active_agent(agent_id):
         raise HTTPException(status_code=404, detail="Agent not active")
     if logic.deactivate_agent(agent_id):
@@ -98,6 +145,12 @@ def deactivate_agent(agent_id: str) -> Dict[Any, Any]:
 @router.post("/agents/verify", response_model=bridge.Token, tags=["agent_attestation"],
              responses={404: {"model": bridge.HTTPError, "description": "Taken does not belong to any agent"}})
 def verify_token(token: str) -> bridge.Token:
+    """
+    Verify token to check if it belongs to an active agent.
+
+    :param token: token to check
+    :return: Token with agent UUID if the token exits
+    """
     db_token = crud.get_token(token)
     if not db_token:
         raise HTTPException(status_code=404, detail="Token does not belong to any agent")
@@ -106,4 +159,9 @@ def verify_token(token: str) -> bridge.Token:
 
 @router.get("/agents/active", response_model=List[bridge.ActiveAgent], tags=["agent_attestation"])
 def list_active_agents() -> List[bridge.ActiveAgent]:
+    """
+    List active agents at the bridge.
+
+    :return: list of active agents.
+    """
     return crud.get_active_agents()

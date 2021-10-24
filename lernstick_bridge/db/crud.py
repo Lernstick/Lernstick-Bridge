@@ -15,9 +15,10 @@ from lernstick_bridge.schema import bridge
 
 def get_agent(agent_id: str) -> Optional[bridge.Agent]:
     """
-    Returns a agent from the database
-    :param agent_id: the agent id
-    :return: the Agent or None if not found
+    Get an agent from the database.
+
+    :param agent_id: the agent UUID
+    :return: the agent or None if not found
     """
     try:
         agent = db.query(models.Agent).filter(models.Agent.agent_id == agent_id).first()
@@ -30,11 +31,23 @@ def get_agent(agent_id: str) -> Optional[bridge.Agent]:
 
 
 def get_agents() -> List[bridge.Agent]:
+    """
+    Get all agents from the database
+
+    :return: List of agents
+    """
     agents = db.query(models.Agent).all()
     return parse_obj_as(List[bridge.Agent], agents)
 
 
 def add_agent(agent: bridge.Agent) -> bridge.Agent:
+    """
+    Add an agent to the database.
+    Note this will not check if the agent already exists in the database.
+
+    :param agent: the agent to add
+    :return: the agent stored in the database
+    """
     db_agent = models.Agent(**dict(agent))
     db.add(db_agent)
     db.commit()
@@ -43,6 +56,12 @@ def add_agent(agent: bridge.Agent) -> bridge.Agent:
 
 
 def delete_agent(agent_id: str) -> bool:
+    """
+    Removes an agent from the database.
+
+    :param agent_id: the agent UUID
+    :return: True if successful and False if no agent with that agent_id was found the the database
+    """
     db_agent = db.query(models.Agent).filter(models.Agent.agent_id == agent_id).first()
     if db_agent is None:
         return False
@@ -52,6 +71,12 @@ def delete_agent(agent_id: str) -> bool:
 
 
 def update_agent(agent: bridge.Agent) -> bool:
+    """
+    Updates an agent in the database.
+
+    :param agent: agent with fields that should not change set to None
+    :return: True if successful
+    """
     db_agent = db.query(models.Agent).filter(models.Agent.agent_id == agent.agent_id).first()
     for key, value in agent.dict().items():
         if key is not None:
@@ -62,6 +87,15 @@ def update_agent(agent: bridge.Agent) -> bool:
 
 
 def add_active_agent(agent_id: str, token: str, timeout: Optional[datetime.datetime] = None) -> bool:
+    """
+    Store the activation of an agent in the database.
+
+    :param agent_id: the agent UUID
+    :param token: token that is deployed to that agent. Note this value must be unique
+    :param timeout: (only used in relaxed mode) when the agent should be removed automatically from attestation.
+                    Set to None to never expire.
+    :return: True if the action was successful
+    """
     if get_active_agent(agent_id):
         return False
 
@@ -76,6 +110,13 @@ def add_active_agent(agent_id: str, token: str, timeout: Optional[datetime.datet
 
 
 def set_timeout_active_agent(agent_id: str, timeout: Optional[datetime.datetime]) -> bool:
+    """
+    Set or change the timeout of an active agent.
+
+    :param agent_id: the agent UUID
+    :param timeout: new timeout to set. Set to None to never expire
+    :return: Ture if action was successful and False if agent is not active
+    """
     agent = db.query(models.ActiveAgent).filter(models.ActiveAgent.agent_id == agent_id).first()
     if not agent:
         return False
@@ -85,6 +126,12 @@ def set_timeout_active_agent(agent_id: str, timeout: Optional[datetime.datetime]
 
 
 def get_active_agent(agent_id: str) -> Optional[bridge.ActiveAgent]:
+    """
+    Get an active agent.
+
+    :param agent_id: the agent UUID
+    :return: The agent or None if not found
+    """
     agent = db.query(models.ActiveAgent).filter(models.ActiveAgent.agent_id == agent_id).first()
     if not agent:
         return None
@@ -92,11 +139,22 @@ def get_active_agent(agent_id: str) -> Optional[bridge.ActiveAgent]:
 
 
 def get_active_agents() -> List[bridge.ActiveAgent]:
+    """
+    Get a list of all active agents.
+
+    :return: the list of all active agents
+    """
     agents = db.query(models.ActiveAgent).all()
     return parse_obj_as(List[bridge.ActiveAgent], agents)
 
 
 def delete_active_agent(agent_id: str) -> bool:
+    """
+    Delete a active agent.
+
+    :param agent_id: the agent UUID
+    :return: True if successful and False if agent is not active
+    """
     agent = db.query(models.ActiveAgent).filter(models.ActiveAgent.agent_id == agent_id).first()
     if not agent:
         return False
@@ -106,6 +164,12 @@ def delete_active_agent(agent_id: str) -> bool:
 
 
 def get_token(token: str) -> Optional[bridge.Token]:
+    """
+    Get token object with the agent id from the database.
+
+    :param token: the token as a string
+    :return: the token object or None if not found
+    """
     token = db.query(models.ActiveAgent).filter(models.ActiveAgent.token == token).first()
     if not token:
         return None

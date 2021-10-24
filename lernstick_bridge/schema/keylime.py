@@ -45,6 +45,9 @@ class AgentVerifierRequest(BaseModel):
 
 
 class RevocationMsg(BaseModel):
+    """
+    Revocation message data send by Keylime on agent failure.
+    """
     type: str
     ip: IPv4Address
     agent_id: str
@@ -58,6 +61,10 @@ class RevocationMsg(BaseModel):
 
 
 class RevocationResp(BaseModel):
+    """
+    Revocation message send by Keylime on agent failure with an optional signature.
+    We do not use the signature feature because we can trust the Keylime Verifier directly.
+    """
     msg: Union[Json[RevocationMsg], RevocationMsg]  # type: ignore # pylint: disable=E1136
     signature: Optional[str]
 

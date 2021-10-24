@@ -24,7 +24,14 @@ from lernstick_bridge.utils import RetrySession
 # and the copyright notice is added.
 
 
-def do_quote(agent_url: str, aik: str) -> Tuple[bool, Optional[str]]:  # pylint: disable=too-many-locals
+def do_quote(agent_url: str, ak: str) -> Tuple[bool, Optional[str]]:  # pylint: disable=too-many-locals
+    """
+    Does an identity quote of an agent and validates it against the provided AK.
+
+    :param agent_url: the contact URL of the agent
+    :param ak: the AK for the agent. We assume that we trust that AK at this point.
+    :return: A tuple (True, Transport Key) if validation was successful and (False, None) if not
+    """
     nonce = util.get_random_nonce()
 
     try:
@@ -41,7 +48,7 @@ def do_quote(agent_url: str, aik: str) -> Tuple[bool, Optional[str]]:  # pylint:
         logger.error(f"Response from agent {agent_url} is missing data: {e}")
         return False, None
 
-    (tpm2b_pub, _) = tpm2_pytss.TPM2B_PUBLIC().unmarshal(base64.b64decode(aik))
+    (tpm2b_pub, _) = tpm2_pytss.TPM2B_PUBLIC().unmarshal(base64.b64decode(ak))
     pem_aik = tpm2b_pub.to_pem()
 
     if quote[0] != "r":
@@ -70,14 +77,15 @@ def do_quote(agent_url: str, aik: str) -> Tuple[bool, Optional[str]]:  # pylint:
     return quote_valid, pubkey
 
 
-def _check_qoute(aik: bytes, quote_data: bytes, signature_data: bytes, pcr_data: bytes, nonce: str, hash_alg: str) \
+def _check_qoute(ak: bytes, quote_data: bytes, signature_data: bytes, pcr_data: bytes, nonce: str, hash_alg: str) \
         -> Tuple[bool, Optional[str]]:  # pylint: disable=too-many-arguments
     """
-    Validates a quote using tpm2_checkqoute.
-    :param aik: AIK PEM encoded
+    Validates a quote using tpm2_checkquote.
+
+    :param ak: AK PEM encoded
     :param quote_data: The TPM quote
     :param signature_data: The signature of the quote
-    :param pcr_data:
+    :param pcr_data: The values of the PCRs
     :param nonce: Send nonce
     :param hash_alg: Used hashing algorithm
     :return: True if valid
@@ -86,20 +94,20 @@ def _check_qoute(aik: bytes, quote_data: bytes, signature_data: bytes, pcr_data:
     with NamedTemporaryFile(prefix="lernstick-", ) as quote_file, \
             NamedTemporaryFile(prefix="lernstick-", ) as sig_file, \
             NamedTemporaryFile(prefix="lernstick-", ) as pcr_file, \
-            NamedTemporaryFile(prefix="lernstick-", ) as aik_file:
+            NamedTemporaryFile(prefix="lernstick-", ) as ak_file:
         quote_file.write(quote_data)
         sig_file.write(signature_data)
         pcr_file.write(pcr_data)
-        aik_file.write(aik)
+        ak_file.write(ak)
 
         quote_file.seek(0)
         sig_file.seek(0)
         pcr_file.seek(0)
-        aik_file.seek(0)
+        ak_file.seek(0)
 
         ret = subprocess.run(  # pylint: disable=subprocess-run-check
             ["tpm2_checkquote",
-             "-u", aik_file.name,
+             "-u", ak_file.name,
              "-m", quote_file.name,
              "-s", sig_file.name,
              "-f", pcr_file.name,
@@ -123,6 +131,14 @@ def _check_qoute(aik: bytes, quote_data: bytes, signature_data: bytes, pcr_data:
 
 
 def get_pubkey(agent_url: str) -> Optional[str]:
+    """
+    **Use with caution!**
+    Get the transport key from the agent without any validation.
+    For most cases use do_quote instead.
+
+    :param agent_url: the agent contact URL
+    :return: the transport key or None if something went wrong.
+    """
     logger.warning(f"Getting public key from agent {agent_url} without quote validation.")
     try:
         res = RetrySession().get(f"{agent_url}/keys/pubkey")
@@ -140,8 +156,9 @@ def get_pubkey(agent_url: str) -> Optional[str]:
 
 def post_payload_u(agent_id: str, agent_url: str, payload: Payload, key: Any = None) -> bool:
     """
-    Posts the encrypted payload and the u key to the agent
-    :param agent_id: The uuid of the agent
+    Posts the encrypted payload and the u key to the agent.
+
+    :param agent_id: The UUID of the agent
     :param agent_url: The url where we can contact the agent
     :param payload: The payload to post
     :param key: Public RSA key for encrypting the u key.

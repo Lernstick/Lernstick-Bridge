@@ -15,6 +15,10 @@ _retries = Retry(
 
 
 class RetrySession(Session):
+    """
+    requests Session that retries on [500,502,504] automatically.
+    Retry interval can be specified in the bridge configuration.
+    """
     def __init__(self) -> None:
         super().__init__()
         adapter = HTTPAdapter(max_retries=_retries)

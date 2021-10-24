@@ -17,6 +17,13 @@ session.verify = False
 
 
 def add_agent(agent_id: str, verifier_request: AgentVerifierRequest) -> bool:
+    """
+    Add an agent to the Keylime Verifier.
+
+    :param agent_id: the agent UUID
+    :param verifier_request: the necessary agent data.
+    :return: True if successful
+    """
     try:
         res = session.post(f"{VERIFIER_URL}/agents/{agent_id}", data=verifier_request.json())
         return res.status_code == 200
@@ -25,7 +32,13 @@ def add_agent(agent_id: str, verifier_request: AgentVerifierRequest) -> bool:
         return False
 
 
-def get_agent(agent_id: str) -> Optional[Dict[Any,Any]]:
+def get_agent(agent_id: str) -> Optional[Dict[Any, Any]]:
+    """
+    Get agent data from the verifier.
+
+    :param agent_id: the agent UUID
+    :return: a dict of the the agent data or None with something went wrong.
+    """
     try:
         res = session.get(f"{VERIFIER_URL}/agents/{agent_id}")
         data = res.json()
@@ -39,6 +52,12 @@ def get_agent(agent_id: str) -> Optional[Dict[Any,Any]]:
 
 
 def get_agent_state(agent_id: str) -> Any:
+    """
+    Get the state of the agent from the Keylime Verifier.
+
+    :param agent_id: the agent UUID
+    :return: the state
+    """
     # TODO this will change when the tagging proposal is implemented
     agent_data = get_agent(agent_id)
     assert agent_data is not None
@@ -46,6 +65,13 @@ def get_agent_state(agent_id: str) -> Any:
 
 
 def delete_agent(agent_id: str) -> bool:
+    """
+    Remove an agent from the Keylime Verifier.
+    Note that it might take a while before the agent is actually removed from the Verifier.
+
+    :param agent_id: the agent UUID
+    :return: True if successful
+    """
     try:
         res = session.delete(f"{VERIFIER_URL}/agents/{agent_id}")
         if res.status_code == 202:

@@ -16,9 +16,7 @@ extension-pkg-allow-list=pydantic
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
-disable=missing-function-docstring,
-        missing-class-docstring,
-        logging-fstring-interpolation,
+disable=logging-fstring-interpolation,
         fixme
 
 [STRING]
@@ -46,4 +44,5 @@ good-names=i,
            v,
            a,
            b,
+           ak,
            iv

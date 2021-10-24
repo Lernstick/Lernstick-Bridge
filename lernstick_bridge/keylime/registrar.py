@@ -21,6 +21,12 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def get_agent(agent_id: str) -> Optional[AgentRegistrar]:
+    """
+    Gets an agent from the Keylime Registrar.
+
+    :param agent_id: the agent UUID
+    :return: the Agent or None if not found.
+    """
     try:
         res = session.get(f"{REGISTRAR_URL}/agents/{agent_id}")
         data = res.json()
@@ -34,6 +40,11 @@ def get_agent(agent_id: str) -> Optional[AgentRegistrar]:
 
 
 def get_agents() -> List[str]:
+    """
+    Get all agent UUIDs currently found in the Keylime Registrar.
+
+    :return: list of agent UUIDs
+    """
     try:
         res = session.get(f"{REGISTRAR_URL}/agents")
         data = res.json()
@@ -47,6 +58,12 @@ def get_agents() -> List[str]:
 
 
 def delete_agent(agent_id: str) -> bool:
+    """
+    Removes an agent from the Keylime Registrar.
+
+    :param agent_id: the agent UUID
+    :return: True if successful
+    """
     try:
         res = session.delete(f"{REGISTRAR_URL}/agents/{agent_id}")
         return res.status_code == 200

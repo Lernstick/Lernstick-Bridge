@@ -45,6 +45,11 @@ app.include_router(keylime.router)
 
 @app.on_event("shutdown")
 def cleanup() -> None:
+    """
+    Deactive all active agents on shutdown.
+
+    :return: None
+    """
     logger.info("Starting shutdown actions")
     # Remove all active agents
     logger.info("Remove all currently active agents.")
@@ -58,6 +63,12 @@ def cleanup() -> None:
 
 @app.on_event("startup")
 async def startup() -> None:
+    """
+    - Add warnings if EK validation is disabled or webhook is not configured.
+    - Start loop for relaxed mode.
+
+    :return: None
+    """
     logger.info(f"Started in {config.mode} mode.")
     if not config.validate_ek_registration:
         logger.warning("EK validation is disabled!")

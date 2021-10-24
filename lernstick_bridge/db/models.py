@@ -10,6 +10,9 @@ from lernstick_bridge.db.database import Base
 
 
 class Agent(Base):
+    """
+    Database model for the agents table in strict mode.
+    """
     __tablename__ = "agents"
 
     agent_id = Column(String, primary_key=True, index=True)  # Is in our case the ek_cert hashed
@@ -29,6 +32,9 @@ class Agent(Base):
 
 
 class ActiveAgent(Base):
+    """
+    Database model for the active agent table.
+    """
     __tablename__ = "active_agents"
     agent_id = Column(String, primary_key=True, index=True)
     token = Column(String, unique=True, index=True)  # Tokens are assumed to be be unique so we enforce that in the database
