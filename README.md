@@ -25,20 +25,24 @@ Non manually activated devices that are active in the bridge are automatically r
 Manually activated devices must be removed by the exam system. 
 
 If a device was deactivated the agent must be restarted in order to register with the registrar again. 
+
 ## Deployment
-For creating a test environment see: [TEST_SETUP.md](TEST_SETUP.md)
+The Lernstick Bridge with Keylime can be fully deployed using Docker.
+See [TEST_SETUP.md](TEST_SETUP.md) for more details.
 
 ## Configuration
 Configuration is done using pydantic settings. The setting schema is specified in `lernstick_bridge/schema/config.py`. 
 More information can be found here: https://pydantic-docs.helpmanual.io/usage/settings/
+
+`.docker_env` provides a default configuration that works out of the box in 
 
 ## API documentation
 FastAPI automatically generates a Swagger documentation. 
 It can be found when the Bridge is running under `IP:PORT/docs`.  
 
 ## Known design limitations
-* We allow only one valid generic Configuration for Keylime at a time. 
+* We allow only one valid generic configuration for Keylime at a time. 
   Allowing multiple configurations conflicts with idea of autoconfiguration.
 * More granular reporting of the state of an agent is limited by the current capabilities of Keylime.
 * The device id is mapped to the EK cert.
-* The registrar, verifier and bridge need a route to conact the agent (Limitation of Keylime).
+* The registrar, verifier and bridge need a route to contact the agent using a static IP (limitation of Keylime).
