@@ -34,6 +34,7 @@ Just run `docker-compose -up`.
    * Either install them from the Lernstick repository with `apt install python3-keylime-agent python3-keylime-defaultconf`
    * Or build them locally (see below) and
      install them with `apt install ./python3-keylime-lib*.deb ./python3-keylime-defaultconf*.deb ./python3-keylime-agent*.deb`
+ * Copy `cv_ca/cacert.crt` Keylime CA certificate to the device to `/var/lib/keylime/cacert.crt`.
 
 Changes to `/etc/keylime.conf`:
 
@@ -42,6 +43,7 @@ Changes to `/etc/keylime.conf`:
    * `agent_contact_ip` change to the devices IP address reachable by the Bridge. E.g. `192.168.0.1`.
    * `registrar_ip` change to IP where the Bridge is running
    * `agent_uuid` change to `hash_ek`
+   * `keylime_ca` change to `/var/lib/keylime/cacert.crt`
 
 Now restart the agent with `systemctl restart keylime_agent`.
 If this fails make sure that the registrar is running and reachable from the device.
@@ -55,7 +57,7 @@ the Bridge.
 Usage: `python3 register_agent.py "http://BRIDGE_IP:BRIDGE_PORT"`
 
 ## Building the Keylime Debian Package
-For the agent Keylime versions 6.2.0 later will work with the Lernstick Bridge.
+For the agent Keylime versions 6.3.0 later will work with the Lernstick Bridge.
 
 * Get Debian packaging from: `https://github.com/utkarsh2102/python-keylime`
 * Build package `dpk-buildpackage -uc -us -b`
