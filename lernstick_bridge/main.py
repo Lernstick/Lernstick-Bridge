@@ -13,6 +13,7 @@ from lernstick_bridge.config import REGISTRAR_URL, config
 from lernstick_bridge.db import crud
 from lernstick_bridge.db.database import Base, db, engine
 from lernstick_bridge.routers import agents, keylime
+from lernstick_bridge.utils import RetrySession
 
 Base.metadata.create_all(bind=engine)
 
@@ -77,9 +78,12 @@ async def startup() -> None:
 
     if config.mode == "relaxed":
         # Wait for registrar to come available
+        session = RetrySession(ignore_hostname=True)
+        session.cert = (config.registrar.tls_cert, config.registrar.tls_priv_key)
+        session.verify = config.registrar.ca_cert
         while True:
             try:
-                requests.get(REGISTRAR_URL, verify=False, cert=(config.registrar.tls_cert, config.registrar.tls_priv_key))
+                session.get(REGISTRAR_URL)
                 break
             except requests.exceptions.ConnectionError:
                 time.sleep(1)

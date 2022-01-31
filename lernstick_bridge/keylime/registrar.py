@@ -6,18 +6,15 @@ Copyright 2021 Thore Sommer
 from typing import List, Optional
 
 import requests
-import urllib3
 
 from lernstick_bridge.bridge_logger import logger
 from lernstick_bridge.config import REGISTRAR_URL, config
 from lernstick_bridge.schema.keylime import AgentRegistrar
 from lernstick_bridge.utils import RetrySession
 
-# TODO don't disable SSL Cert validation
-session = RetrySession()
+session = RetrySession(ignore_hostname=True)
 session.cert = (config.registrar.tls_cert, config.registrar.tls_priv_key)
-session.verify = False
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+session.verify = config.registrar.ca_cert
 
 
 def get_agent(agent_id: str) -> Optional[AgentRegistrar]:

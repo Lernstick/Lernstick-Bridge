@@ -33,7 +33,7 @@ class Verifier(BaseModel):
     """
     tls_cert: str  # certificate for client TLS auth
     tls_priv_key: str  # key for for client TLS auth
-    tls_cert_server: str  # certificate of the verifier
+    ca_cert: str  # certificate of the verifier CA
 
 
 class Registrar(BaseModel):
@@ -42,7 +42,7 @@ class Registrar(BaseModel):
     """
     tls_cert: str  # certificate for client TLS auth
     tls_priv_key: str  # key for for client TLS auth
-    tls_cert_server: str  # certificate of the registrar
+    ca_cert: str  # certificate of the registrar CA
 
 
 class Config(BaseSettings):
