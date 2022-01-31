@@ -74,7 +74,7 @@ class AgentBridge(BaseModel):
         :return: True if quote is valid
         """
         assert self.registrar_data
-        valid, pubkey = agent.do_quote(self.get_url(), self.registrar_data.aik_tpm)
+        valid, pubkey = agent.do_quote(self.get_url(), self.registrar_data.aik_tpm, self.registrar_data.mtls_cert)
         if valid:
             self._pubkey = util.str_to_rsapubkey(pubkey)
         return valid
@@ -86,7 +86,7 @@ class AgentBridge(BaseModel):
         :return: string that is the agent contact url
         """
         assert self.registrar_data
-        return f"http://{self.registrar_data.ip}:{self.registrar_data.port}/{config.config.keylime_api_entrypoint}"
+        return f"https://{self.registrar_data.ip}:{self.registrar_data.port}/{config.config.keylime_api_entrypoint}"
 
     def deploy_token(self) -> Optional[Token]:
         """
@@ -97,7 +97,8 @@ class AgentBridge(BaseModel):
         if not self._token:
             token = Token(agent_id=self.agent_id)
             payload = token.to_payload()
-            if agent.post_payload_u(self.agent_id, self.get_url(), payload, self._pubkey):
+            assert self.registrar_data
+            if agent.post_payload_u(self.agent_id, self.get_url(), payload, self.registrar_data.mtls_cert, self._pubkey):
                 self._token = token
         return self._token
 

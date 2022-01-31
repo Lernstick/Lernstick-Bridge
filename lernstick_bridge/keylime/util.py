@@ -148,14 +148,17 @@ def data_extend(data: bytes, hash_alg: Optional[str] = "sha256") \
     Calculates the PCR extend from a reset with the hash of data.
 
     :param data: the data that should used for simulate that PCR extend.
-    :param hash_alg: the hash_alg that should be used. Only sha256 is currently implemented.
+    :param hash_alg: the hash_alg that should be used. Only sha1 and sha256 are currently implemented.
     :return: The Hash or None if the hash_alg is not implemented
     """
     if hash_alg == "sha256":
         start_hash = b"0" * (256 // 4)
         data_hash = hashlib.sha256(data).digest()
         return hashlib.sha256(codecs.decode(start_hash, "hex_codec") + data_hash).hexdigest()
-
+    if hash_alg == "sha1":
+        start_hash = b"0" * (160 // 4)
+        data_hash = hashlib.sha1(data).digest()
+        return hashlib.sha1(codecs.decode(start_hash, "hex_codec") + data_hash).hexdigest()
     return None
 
 

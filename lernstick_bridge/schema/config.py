@@ -25,6 +25,8 @@ class Tenant(BaseModel):
     data_pcr: int = 16  # Keylime uses by default the Debug PCR to bin data to a quote
     measuredboot_pcrs: List[int] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15] # TODO check if we actually need all
     relaxed_timeout: timedelta = timedelta(seconds=60)
+    agent_mtls_cert: str
+    agent_mtls_priv_key: str
 
 
 class Verifier(BaseModel):
@@ -51,7 +53,7 @@ class Config(BaseSettings):
     """
     ip: IPv4Address = IPv4Address("127.0.0.1")
     port: int = 8080
-    keylime_api_entrypoint: str = "v1.0"
+    keylime_api_entrypoint: str = "v2.0"
     keylime_registrar: str = "https://localhost:8891"
     keylime_verifier: str = "https://localhost:8881"
     tpm_cert_store: Optional[Path] = None
@@ -64,7 +66,7 @@ class Config(BaseSettings):
     measured_boot_policy: Optional[str] = None
     ima_policy: Optional[str] = None
     retry_attempts: int = 4
-    tenant: Tenant = Tenant()
+    tenant: Tenant
     verifier: Verifier
     registrar: Registrar
 

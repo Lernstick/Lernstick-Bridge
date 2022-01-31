@@ -11,9 +11,9 @@ from lernstick_bridge.config import VERIFIER_URL, config
 from lernstick_bridge.schema.keylime import AgentVerifierRequest
 from lernstick_bridge.utils import RetrySession
 
-session = RetrySession(ignore_hostname=True)
-session.cert = (config.verifier.tls_cert, config.verifier.tls_priv_key)
-session.verify = config.verifier.ca_cert
+session = RetrySession(cert=(config.verifier.tls_cert, config.verifier.tls_priv_key),
+                       verify=config.verifier.ca_cert,
+                       ignore_hostname=True)
 
 
 def add_agent(agent_id: str, verifier_request: AgentVerifierRequest) -> bool:

@@ -19,7 +19,7 @@ services:
         target: /mb_policy.json
 
   verifier:
-    image: ghcr.io/ths-on/keylime/keylime_verifier
+    image: ghcr.io/keylime/keylime/keylime_verifier
     restart: always
     ports:
       - "8880:8880"
@@ -37,7 +37,7 @@ services:
 
 
   registrar:
-    image: ghcr.io/ths-on/keylime/keylime_registrar
+    image: ghcr.io/keylime/keylime/keylime_registrar
     ports:
       - "8890:8890"
       - "8891:8891"

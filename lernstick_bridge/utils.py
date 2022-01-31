@@ -2,8 +2,9 @@
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
-
-from typing import Any
+import os.path
+from tempfile import TemporaryDirectory
+from typing import Any, Optional, Tuple, Union
 
 import requests
 from requests import Session
@@ -24,13 +25,37 @@ class RetrySession(Session):
     requests Session that retries on [500,502,504] automatically.
     Retry interval can be specified in the bridge configuration.
     """
-    def __init__(self, ignore_hostname: bool = False) -> None:
+    _tmp_dir: Optional[TemporaryDirectory]  # type: ignore
+
+    def __init__(self, verify_cert: Optional[str] = None, verify: Optional[Union[bool, str]] = None, cert: Optional[Tuple[str, str]] = None,
+                 ignore_hostname: bool = False) -> None:
         super().__init__()
+        self._tmp_dir = None
+        self.verify_cert = verify_cert
+        if verify is not None:
+            self.verify = verify
+        if cert is not None:
+            self.cert = cert
+
         adapter = HTTPAdapter(max_retries=_retries)
         if ignore_hostname:
             adapter = HostNameIgnoreAdapter(max_retries=_retries)
         self.mount("http://", adapter)
         self.mount("https://", adapter)
+
+    def __enter__(self) -> Any:
+        # This is a hacky workaround for SslContext not being able to load certificates directly
+        if self.verify_cert:
+            self._tmp_dir = TemporaryDirectory(prefix="lernstick-")
+            cert_path = os.path.join(self._tmp_dir.name, "cert.crt")
+            with open(cert_path, "w", encoding="utf-8") as file:
+                file.write(self.verify_cert)
+            self.verify = cert_path
+        return self
+
+    def __exit__(self, *_: Any) -> None:
+        if self._tmp_dir is not None:
+            self._tmp_dir.cleanup()
 
 
 class HostNameIgnoreAdapter(HTTPAdapter):

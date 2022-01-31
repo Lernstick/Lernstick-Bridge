@@ -6,7 +6,6 @@ Copyright 2021 Thore Sommer
 import base64
 import json
 import subprocess
-import zlib
 from tempfile import NamedTemporaryFile
 from typing import Any, Optional, Tuple
 
@@ -24,18 +23,21 @@ from lernstick_bridge.utils import RetrySession
 # and the copyright notice is added.
 
 
-def do_quote(agent_url: str, ak: str) -> Tuple[bool, Optional[str]]:  # pylint: disable=too-many-locals
+def do_quote(agent_url: str, ak: str, mtls_cert: str) -> Tuple[bool, Optional[str]]:  # pylint: disable=too-many-locals
     """
     Does an identity quote of an agent and validates it against the provided AK.
 
     :param agent_url: the contact URL of the agent
     :param ak: the AK for the agent. We assume that we trust that AK at this point.
+    :param mtls_cert: mTLS certificate of the agent
     :return: A tuple (True, Transport Key) if validation was successful and (False, None) if not
     """
     nonce = util.get_random_nonce()
 
     try:
-        ret = RetrySession().get(f"{agent_url}/quotes/identity?nonce={nonce}")
+        with RetrySession(verify_cert=mtls_cert, cert=(config.tenant.agent_mtls_cert, config.tenant.agent_mtls_priv_key),
+                          ignore_hostname=True) as session:
+            ret = session.get(f"{agent_url}/quotes/identity?nonce={nonce}")
     except requests.exceptions.RequestException as e:
         logger.error(f"Getting the quote from the agent {agent_url} failed: {e}")
         return False, None
@@ -62,9 +64,9 @@ def do_quote(agent_url: str, ak: str) -> Tuple[bool, Optional[str]]:  # pylint: 
         logger.error(f"Quote form {agent_url} is invalid. Does not contain 3 values.")
         return False, None
 
-    quote_val = zlib.decompress(base64.b64decode(quote_vals[0]))
-    sig_val = zlib.decompress(base64.b64decode(quote_vals[1]))
-    pcr_val = zlib.decompress(base64.b64decode(quote_vals[2]))
+    quote_val = base64.b64decode(quote_vals[0])
+    sig_val = base64.b64decode(quote_vals[1])
+    pcr_val = base64.b64decode(quote_vals[2])
 
     quote_valid, data_pcr_hash = _check_qoute(pem_aik, quote_val, sig_val, pcr_val, nonce, hash_alg)
     computed = util.data_extend(pubkey.encode("utf-8"), hash_alg)
@@ -154,24 +156,29 @@ def get_pubkey(agent_url: str) -> Optional[str]:
         return None
 
 
-def post_payload_u(agent_id: str, agent_url: str, payload: Payload, key: Any = None) -> bool:
+def post_payload_u(agent_id: str, agent_url: str, payload: Payload, mtls_cert: str, key: Any = None) -> bool:
     """
     Posts the encrypted payload and the u key to the agent.
 
     :param agent_id: The UUID of the agent
     :param agent_url: The url where we can contact the agent
     :param payload: The payload to post
+    :param mtls_cert: mTLS certificate of the agent
     :param key: Public RSA key for encrypting the u key.
     :return: True if it was successful
     """
     auth_tag = util.do_hmac(payload.k, agent_id)
     if key is None:
-        key = get_pubkey(agent_url)
+        logger.error(f"Transport key not provided not posting payload for agent: {agent_id}")
+        return False
     data = {"auth_tag": auth_tag,
             "encrypted_key": base64.b64encode(util.rsa_encrypt(key, payload.u)).decode("utf-8"),
             "payload": payload.encrypted_data}
     try:
-        res = RetrySession().post(f"{agent_url}/keys/ukey", data=json.dumps(data))
+        with RetrySession(verify_cert=mtls_cert,
+                          cert=(config.tenant.agent_mtls_cert, config.tenant.agent_mtls_priv_key),
+                          ignore_hostname=True) as session:
+            res = session.post(f"{agent_url}/keys/ukey", data=json.dumps(data))
     except requests.exceptions.RequestException as e:
         logger.error(f"Could post payload to agent {agent_id}: {e}")
         return False

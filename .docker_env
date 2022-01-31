@@ -2,6 +2,7 @@ export ip='0.0.0.0'
 export port='8080'
 export registrar='{"tls_cert": "/cv_ca/client-cert.crt", "tls_priv_key": "/cv_ca/client-private.pem", "ca_cert": "/cv_ca/cacert.crt"}'
 export verifier='{"tls_cert": "/cv_ca/client-cert.crt", "tls_priv_key": "/cv_ca/client-private.pem", "ca_cert": "/cv_ca/cacert.crt"}'
+export tenant='{"agent_mtls_cert": "/cv_ca/client-cert.crt", "agent_mtls_priv_key": "/cv_ca/client-private.pem"}'
 export keylime_registrar="https://registrar:8891"
 export keylime_verifier="https://verifier:8881"
 export tpm_cert_store="/lernstick/tpm_cert_store"

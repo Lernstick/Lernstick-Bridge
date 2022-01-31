@@ -12,10 +12,9 @@ from lernstick_bridge.config import REGISTRAR_URL, config
 from lernstick_bridge.schema.keylime import AgentRegistrar
 from lernstick_bridge.utils import RetrySession
 
-session = RetrySession(ignore_hostname=True)
-session.cert = (config.registrar.tls_cert, config.registrar.tls_priv_key)
-session.verify = config.registrar.ca_cert
-
+session = RetrySession(cert=(config.registrar.tls_cert, config.registrar.tls_priv_key),
+                       verify=config.registrar.ca_cert,
+                       ignore_hostname=True)
 
 def get_agent(agent_id: str) -> Optional[AgentRegistrar]:
     """

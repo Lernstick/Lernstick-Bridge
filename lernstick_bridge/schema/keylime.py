@@ -23,6 +23,7 @@ class AgentRegistrar(BaseModel):
     ekcert: str
     ip: IPv4Address
     port: int
+    mtls_cert: str
 
 
 class AgentVerifierRequest(BaseModel):
@@ -42,6 +43,8 @@ class AgentVerifierRequest(BaseModel):
     accept_tpm_hash_algs: str = json.dumps(config.tenant.accept_tpm_hash_algs)
     accept_tpm_encryption_algs: str = json.dumps(config.tenant.accept_tpm_encryption_algs)
     accept_tpm_signing_algs: str = json.dumps(config.tenant.accept_tpm_signing_algs)
+    # We only support agents with the same API version as the server components
+    supported_version: str = config.keylime_api_entrypoint[1:]
 
 
 class RevocationMsg(BaseModel):
