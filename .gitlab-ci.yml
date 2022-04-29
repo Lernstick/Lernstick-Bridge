@@ -1,0 +1,20 @@
+cache:
+  key: "$CI_BUILD_REF_NAME"
+
+stages:
+  - buildImage
+
+Build Docker Image:
+  stage: buildImage
+  variables:
+    DOCKER_USER: $DOCKER_USER
+    DOCKER_PASS: $DOCKER_PASS
+    DOCEKR_URL: $DOCKER_URL
+    IMAGE_NAME: lernstick-bridge
+    IMAGE_TAG: $CI_COMMIT_BRANCH
+  script:
+    - bash -x /home/gitlab-runner/scripts/lernstick-bridge/build_container.sh
+  only:
+    variables:
+      - $CI_COMMIT_MESSAGE =~ /run-pipe:docker/
+      - $CI_COMMIT_MESSAGE =~ /run-pipe:all/
