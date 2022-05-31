@@ -1,0 +1,51 @@
+version: "3.9"
+services:
+  bridge:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    env_file: .docker_env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - registrar
+      - verifier
+    volumes:
+      - type: bind
+        source: ./cv_ca
+        target: /cv_ca
+      - type: bind
+        source: ./measured_boot/mb_policy.json
+        target: /mb_policy.json
+
+  verifier:
+    image: ghcr.io/keylime/keylime/keylime_verifier
+    restart: always
+    ports:
+      - "8880:8880"
+      - "8881:8881"
+    volumes:
+      - type: bind
+        source: ./keylime.conf
+        target: /etc/keylime.conf
+      - type: bind
+        source: ./cv_ca
+        target: /var/lib/keylime/cv_ca
+      - type: bind
+        source: ./measured_boot/lernstick_policy.py
+        target: /usr/local/lib/python3.9/site-packages/keylime/elchecking/lernstick_policy.py
+
+
+  registrar:
+    image: ghcr.io/keylime/keylime/keylime_registrar
+    ports:
+      - "8890:8890"
+      - "8891:8891"
+    volumes:
+      - type: bind
+        source: ./keylime.conf
+        target: /etc/keylime.conf
+      - type: bind
+        source: ./cv_ca
+        read_only: true
+        target: /var/lib/keylime/cv_ca
