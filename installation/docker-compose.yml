@@ -1,9 +1,7 @@
 version: "3.9"
 services:
   bridge:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
+    image: https://campla-dev.adm.ds.fhnw.ch/docker/lernstick-bridge:development
     env_file: .docker_env
     ports:
       - "8080:8080"
