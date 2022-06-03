@@ -59,8 +59,9 @@ Usage: `python3 register_agent.py "http://BRIDGE_IP:BRIDGE_PORT"`
 ## Building the Keylime Debian Package
 For the agent Keylime versions 6.3.0 later will work with the Lernstick Bridge.
 
-* Get Debian packaging from: `https://github.com/utkarsh2102/python-keylime`
-* Build package `dpk-buildpackage -uc -us -b`
+* Clone package: `git clone https://github.com/utkarsh2102/python-keylime && cd python-keylime`
+* Install build requirements: `apt install build-essential git-buildpackage dh-exec dh-python python3-alembic python3-all python3-cryptography python3-dbus python3-gnupg python3-packaging python3-psutil python3-requests python3-setuptools python3-sqlalchemy python3-tornado python3-yaml python3-zmq tpm-udev tpm2-tools`
+* Build package: `gbp buildpackage -uc -us`
 
 # Known Issues
 * Agent won't restart: Kill the agent with `systemctl kill keylime_agen.service` and then restart it.
