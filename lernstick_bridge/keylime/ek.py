@@ -9,8 +9,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
-import OpenSSL.crypto
-from OpenSSL.crypto import (FILETYPE_ASN1, FILETYPE_PEM, X509Store, X509StoreContext,
+from OpenSSL.crypto import (FILETYPE_ASN1, FILETYPE_PEM, Error, X509Store, X509StoreContext,
                             X509StoreContextError, load_certificate)
 
 
@@ -22,12 +21,12 @@ def validate_ek(ek_cert: bytes, cert_store: X509Store) -> bool:
     :param cert_store: X509Store to check against
     :return: True if valid
     """
-    cert = load_certificate(FILETYPE_ASN1, ek_cert)
-    ctx = X509StoreContext(certificate=cert, store=cert_store)
     try:
+        cert = load_certificate(FILETYPE_ASN1, ek_cert)
+        ctx = X509StoreContext(certificate=cert, store=cert_store)
         ctx.verify_certificate()
         return True
-    except X509StoreContextError:
+    except (X509StoreContextError, Error):
         return False
 
 
@@ -50,11 +49,11 @@ def create_ca_store(path: Optional[Path]) -> X509Store:
                 cert = None
                 try:
                     cert = load_certificate(FILETYPE_PEM, data)
-                except OpenSSL.crypto.Error:
+                except Error:
                     pass
                 try:
                     cert = load_certificate(FILETYPE_ASN1, data)
-                except OpenSSL.crypto.Error:
+                except Error:
                     pass
                 if cert is not None:
                     cert_store.add_cert(cert)
