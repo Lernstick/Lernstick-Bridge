@@ -118,7 +118,9 @@ class AgentBridge(BaseModel):
             cloudagent_port=self.registrar_data.port,
             tpm_policy=json.dumps(self._get_tpm_policy()),
             allowlist=json.dumps(AgentBridge._get_ima_policy()),
-            mb_refstate=json.dumps(config.MB_POLICY)
+            mb_refstate=json.dumps(config.MB_POLICY),
+            ak_tpm=self.registrar_data.aik_tpm,
+            mtls_cert=self.registrar_data.mtls_cert,
         )
         return verifier.add_agent(self.agent_id, request)
 

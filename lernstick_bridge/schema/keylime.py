@@ -34,7 +34,6 @@ class AgentVerifierRequest(BaseModel):
     cloudagent_ip: IPv4Address
     cloudagent_port: int
     tpm_policy: str
-    vtpm_policy: str = "{\"mask\": \"0x408000\"}"  # We don't use vtpms so just always add an empty mask
     metadata: str = json.dumps({})
     allowlist: str = json.dumps({})
     mb_refstate: Optional[str] = None
@@ -45,6 +44,8 @@ class AgentVerifierRequest(BaseModel):
     accept_tpm_signing_algs: str = json.dumps(config.tenant.accept_tpm_signing_algs)
     # We only support agents with the same API version as the server components
     supported_version: str = config.keylime_api_entrypoint[1:]
+    ak_tpm: str
+    mtls_cert: str
 
 
 class RevocationMsg(BaseModel):

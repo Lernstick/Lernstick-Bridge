@@ -24,7 +24,7 @@ Depending on Bridge usage the following values might need some change:
 * revocation_webhook: Uncomment and set to the entrypoint where your system wants to receive revocation events.
 
 ## Starting the Bridge and Keylime
-Just run `docker-compose -up`.
+Just run `docker compose -f docker-compose-local.yml up`.
 
 ## Preparing the device
  * Ensure that the device has a TPM2.0
@@ -44,6 +44,7 @@ Changes to `/etc/keylime.conf`:
    * `registrar_ip` change to IP where the Bridge is running
    * `agent_uuid` change to `hash_ek`
    * `keylime_ca` change to `/var/lib/keylime/cacert.crt`
+   * `tpm_hash_alg` change to `sha256`
 
 Now restart the agent with `systemctl restart keylime_agent`.
 If this fails make sure that the registrar is running and reachable from the device.
