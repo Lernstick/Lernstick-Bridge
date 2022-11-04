@@ -178,7 +178,7 @@ def post_payload_u(agent_id: str, agent_url: str, payload: Payload, mtls_cert: s
         with RetrySession(verify_cert=mtls_cert,
                           cert=(config.tenant.agent_mtls_cert, config.tenant.agent_mtls_priv_key),
                           ignore_hostname=True) as session:
-            res = session.post(f"{agent_url}/keys/ukey", data=json.dumps(data))
+            res = session.post(f"{agent_url}/keys/ukey", json=data)
     except requests.exceptions.RequestException as e:
         logger.error(f"Could post payload to agent {agent_id}: {e}")
         return False
