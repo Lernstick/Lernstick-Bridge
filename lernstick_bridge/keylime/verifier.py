@@ -25,7 +25,7 @@ def add_agent(agent_id: str, verifier_request: AgentVerifierRequest) -> bool:
     :return: True if successful
     """
     try:
-        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        headers = {"Content-type": "application/json", "Accept": "text/plain"}
         res = session.post(f"{VERIFIER_URL}/agents/{agent_id}", data=verifier_request.json(), headers=headers)
         return res.status_code == 200
     except requests.exceptions.RequestException as e:

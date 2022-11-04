@@ -4,7 +4,6 @@ Copyright 2017 Massachusetts Institute of Technology.
 Copyright 2021 Thore Sommer
 '''
 import base64
-import json
 import subprocess
 from tempfile import NamedTemporaryFile
 from typing import Any, Optional, Tuple
