@@ -36,6 +36,7 @@ class AgentVerifierRequest(BaseModel):
     tpm_policy: str
     metadata: str = json.dumps({})
     allowlist: str = json.dumps({})
+    ima_policy_bundle: str = json.dumps({})
     mb_refstate: Optional[str] = None
     ima_sign_verification_keys: str = json.dumps([])
     revocation_key: str = ""  # We don't use the revocation feature, so we specify always an empty string

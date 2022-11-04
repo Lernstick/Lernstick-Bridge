@@ -19,15 +19,15 @@ services:
         target: /mb_policy.json
 
   verifier:
-    image: quay.io/keylime/keylime_verifier:sha-3755315
+    image: quay.io/keylime/keylime_verifier:v6.5.1
     restart: always
     ports:
       - "8880:8880"
       - "8881:8881"
     volumes:
       - type: bind
-        source: ./keylime.conf
-        target: /etc/keylime.conf
+        source: ./keylime.conf.d
+        target: /etc/keylime
       - type: bind
         source: ./cv_ca
         target: /var/lib/keylime/cv_ca
@@ -37,14 +37,14 @@ services:
 
 
   registrar:
-    image: quay.io/keylime/keylime_registrar:sha-3755315
+    image: quay.io/keylime/keylime_registrar:v6.5.1
     ports:
       - "8890:8890"
       - "8891:8891"
     volumes:
       - type: bind
-        source: ./keylime.conf
-        target: /etc/keylime.conf
+        source: ./keylime.conf.d
+        target: /etc/keylime
       - type: bind
         source: ./cv_ca
         read_only: true
