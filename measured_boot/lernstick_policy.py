@@ -61,20 +61,38 @@ class LernstickPolicy(policies.Policy):
 
         # Check if SecureBoot is enabled
         dispatcher.set((7, 'EV_EFI_VARIABLE_DRIVER_CONFIG'), vd)
-        vd.set('61dfe48b-ca93-d211-aa0d-00e098032b8c', 'SecureBoot',
+        vd.set('8be4df61-93ca-11d2-aa0d-00e098032b8c', 'SecureBoot',
                tests.FieldTest('Enabled', tests.StringEqual('Yes')))
 
         # TODO only allow PKs and KEKs from known good vendors
-        vd.set('61dfe48b-ca93-d211-aa0d-00e098032b8c', 'PK', tests.AcceptAll())
-        vd.set('61dfe48b-ca93-d211-aa0d-00e098032b8c', 'KEK', tests.AcceptAll())
-        vd.set('cbb219d7-3a3d-9645-a3bc-dad00e67656f', 'db', tests.AcceptAll())
-        vd.set('cbb219d7-3a3d-9645-a3bc-dad00e67656f', 'dbx', tests.AcceptAll())
+        vd.set('8be4df61-93ca-11d2-aa0d-00e098032b8c', 'PK', tests.OnceTest(tests.AcceptAll()))
+        vd.set('8be4df61-93ca-11d2-aa0d-00e098032b8c', 'KEK', tests.OnceTest(tests.AcceptAll()))
+        vd.set('d719b2cb-3d3a-4596-a3bc-dad00e67656f', 'db', tests.OnceTest(tests.AcceptAll()))
+        vd.set('d719b2cb-3d3a-4596-a3bc-dad00e67656f', 'dbx', tests.OnceTest(tests.AcceptAll()))
+        vd.set("605dab50-e046-4300-abb6-3dd810dd8b23", "SbatLevel", tests.OnceTest(tests.AcceptAll()))
+        vd.set("605dab50-e046-4300-abb6-3dd810dd8b23", "Shim", tests.OnceTest(tests.AcceptAll()))
+        vd.set(
+            "605dab50-e046-4300-abb6-3dd810dd8b23",
+            "MokListTrusted",
+            tests.OnceTest(
+                tests.Or(
+                    tests.FieldTest("Enabled", tests.StringEqual("Yes")),
+                    tests.FieldTest("Enabled", tests.StringEqual("No")),
+                )
+            ),
+        )
 
         # Test for validating the applications that are loaded in UEFI
         tt = [tests.DigestTest(refstate["boot"]["bootx64.efi"]),
               tests.DigestTest(refstate["boot"]["grubx64.efi"]),
               tests.DigestTest(refstate["boot"]["vmlinuz"])]
-        bsa_test = tests.TupleTest(*tt)
+        # Some Grub versions load the vmlinuz image twice
+        tt2 = [tests.DigestTest(refstate["boot"]["bootx64.efi"]),
+              tests.DigestTest(refstate["boot"]["grubx64.efi"]),
+              tests.DigestTest(refstate["boot"]["vmlinuz"]),
+              tests.DigestTest(refstate["boot"]["vmlinuz"])]
+
+        bsa_test = tests.Or(tests.TupleTest(*tt), tests.TupleTest(*tt2))
 
         events_final = tests.DelayToFields(
             tests.FieldsTest(
@@ -91,7 +109,7 @@ class LernstickPolicy(policies.Policy):
 
         # Accept all boot order entries
         dispatcher.set((1, 'EV_EFI_VARIABLE_BOOT'), tests.VariableTest(
-            '61dfe48b-ca93-d211-aa0d-00e098032b8c',
+            '8be4df61-93ca-11d2-aa0d-00e098032b8c',
             re.compile('BootOrder|Boot[0-9a-fA-F]+'),
             tests.AcceptAll()))
 
@@ -154,7 +172,15 @@ class LernstickPolicy(policies.Policy):
                                               dispatcher, show_elt=True),
                                           events_final),
                                       show_name=False)
-        return events_test
+
+        # Check for CRTM using PCR0 value in strict mode
+        crtm_test = tests.AcceptAll()
+        if refstate.get("crtm"):
+            crtm_test = tests.FieldTest('pcrs',
+                                        tests.FieldTest('sha256',
+                                                        tests.FieldTest('0',
+                                                                        tests.IntEqual(int(refstate["crtm"], 0)))))
+        return tests.And(events_test, crtm_test)
 
 
 policies.register('lernstick', LernstickPolicy())

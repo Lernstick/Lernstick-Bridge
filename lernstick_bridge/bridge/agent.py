@@ -4,6 +4,7 @@ Copyright 2021 Thore Sommer
 '''
 
 import base64
+import copy
 import datetime
 import json
 from typing import Any, Dict, Optional
@@ -118,7 +119,7 @@ class AgentBridge(BaseModel):
             cloudagent_port=self.registrar_data.port,
             tpm_policy=json.dumps(self._get_tpm_policy()),
             ima_policy_bundle=json.dumps(AgentBridge._get_ima_policy()),
-            mb_refstate=json.dumps(config.MB_POLICY),
+            mb_refstate=json.dumps(self._get_mb_refstate()),
             ak_tpm=self.registrar_data.aik_tpm,
             mtls_cert=self.registrar_data.mtls_cert,
         )
@@ -161,6 +162,13 @@ class AgentBridge(BaseModel):
 
         output["mask"] = util.generate_mask(used_pcrs, measured_boot=True, ima=use_ima_pcr)
         return output
+
+    def _get_mb_refstate(self) -> Dict[str, Any]:
+        mb_refstate = copy.deepcopy(config.MB_POLICY)
+        if self.agent:
+            assert self.strict
+            mb_refstate["crtm"] = self.agent.pcr_0
+        return mb_refstate
 
     @staticmethod
     def _get_ima_policy() -> Dict[str, Any]:
