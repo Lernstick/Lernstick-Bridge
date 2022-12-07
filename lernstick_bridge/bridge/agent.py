@@ -31,7 +31,7 @@ class AgentBridge(BaseModel):
     _pubkey: Optional[str] = PrivateAttr(None)  # Caching the pubkey to reduce requests to the agent
 
     @root_validator(pre=True)
-    def get_agent(cls, values: Any) -> Any:  # pylint: disable=no-self-argument, no-self-use
+    def get_agent(cls, values: Any) -> Any:  # pylint: disable=no-self-argument
         """
         Initializes registrar_data and bridge_agent automatically using pydandic validators.
         This is done for better type checking.
@@ -117,7 +117,7 @@ class AgentBridge(BaseModel):
             cloudagent_ip=self.registrar_data.ip,
             cloudagent_port=self.registrar_data.port,
             tpm_policy=json.dumps(self._get_tpm_policy()),
-            allowlist=json.dumps(AgentBridge._get_ima_policy()),
+            ima_policy_bundle=json.dumps(AgentBridge._get_ima_policy()),
             mb_refstate=json.dumps(config.MB_POLICY),
             ak_tpm=self.registrar_data.aik_tpm,
             mtls_cert=self.registrar_data.mtls_cert,
@@ -169,5 +169,8 @@ class AgentBridge(BaseModel):
 
         :return: IMA include and exclude lists
         """
-        excludelist: Dict[str, Any] = {}
-        return {"allowlist": config.IMA_POLICY, "exclude": excludelist}
+        ima_policy_bundle = {}
+        if config.IMA_POLICY:
+            ima_policy_bundle["ima_policy"] = config.IMA_POLICY
+            ima_policy_bundle["excllist"] = []
+        return ima_policy_bundle
