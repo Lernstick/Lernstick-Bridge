@@ -152,7 +152,7 @@ class LernstickPolicy(policies.Policy):
 
         # Ignore grub.cfg hash for now because we want to persist language and keyboard settings
         # In the future we ship a list with all possible hashes
-        grub_cfg = tests.FieldTest('Event', tests.FieldTest('String', tests.RegExp("/boot/grub/grub.cfg")))
+        grub_cfg = tests.FieldTest('Event', tests.FieldTest('String', tests.RegExp(".*/boot/grub/grub.cfg")))
 
         dispatcher.set((9, 'EV_IPL'), tests.Or(*grub_tests, grub_cfg, vmlinuz, initrd))
 
