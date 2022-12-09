@@ -7,7 +7,7 @@ import base64
 import copy
 import datetime
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, PrivateAttr, root_validator
 
@@ -113,12 +113,14 @@ class AgentBridge(BaseModel):
             raise ValueError("Token must be deployed before adding agent to the verifier")
 
         assert self.registrar_data
+        ima_policy_bundle, ima_keyring = self._get_ima_policy()
         request = AgentVerifierRequest(
             v=base64.b64encode(self._token.to_payload().v).decode("utf-8"),
             cloudagent_ip=self.registrar_data.ip,
             cloudagent_port=self.registrar_data.port,
             tpm_policy=json.dumps(self._get_tpm_policy()),
-            ima_policy_bundle=json.dumps(AgentBridge._get_ima_policy()),
+            ima_policy_bundle=json.dumps(ima_policy_bundle),
+            ima_sign_verification_keys=json.dumps(ima_keyring),
             mb_refstate=json.dumps(self._get_mb_refstate()),
             ak_tpm=self.registrar_data.aik_tpm,
             mtls_cert=self.registrar_data.mtls_cert,
@@ -171,14 +173,18 @@ class AgentBridge(BaseModel):
         return mb_refstate
 
     @staticmethod
-    def _get_ima_policy() -> Dict[str, Any]:
+    def _get_ima_policy() -> Tuple[Dict[str, Any], Optional[Dict[str, List[str]]]]:
         """
         Construct global IMA policy.
 
-        :return: IMA include and exclude lists
+        :return: IMA policy bundle and IMA keyring
         """
         ima_policy_bundle = {}
+        ima_keyring = None
         if config.IMA_POLICY:
-            ima_policy_bundle["ima_policy"] = config.IMA_POLICY
-            ima_policy_bundle["excllist"] = []
-        return ima_policy_bundle
+            ima_policy_bundle["ima_policy"] = config.IMA_POLICY["ima_policy"]
+            ima_policy_bundle["excllist"] = config.IMA_POLICY["excllist"]
+            ima_policy_bundle["checksum"] = ""
+            if config.IMA_POLICY.get("keyring"):
+                ima_keyring = config.IMA_POLICY["keyring"]
+        return ima_policy_bundle, ima_keyring
