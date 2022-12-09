@@ -17,7 +17,7 @@ services:
         target: /mb_policy.json
 
   verifier:
-    image: quay.io/keylime/keylime_verifier:v6.5.1
+    image: quay.io/keylime/keylime_verifier:sha-ccd970a
     restart: always
     ports:
       - "8880:8880"
@@ -31,19 +31,23 @@ services:
         target: /var/lib/keylime/cv_ca
       - type: bind
         source: ./measured_boot/lernstick_policy.py
-        target: /usr/local/lib/python3.9/site-packages/keylime/elchecking/lernstick_policy.py
+        target: /usr/local/lib/python3.11/site-packages/keylime/elchecking/lernstick_policy.py
 
 
   registrar:
-    image: quay.io/keylime/keylime_registrar:v6.5.1
+    image: quay.io/keylime/keylime_registrar:sha-ccd970a
     ports:
       - "8890:8890"
       - "8891:8891"
     volumes:
       - type: bind
         source: ./keylime.conf.d
-        target: /etc/keylime/
+        target: /etc/keylime
       - type: bind
         source: ./cv_ca
         read_only: true
         target: /var/lib/keylime/cv_ca
+# Temporarily we need to include also the policy, because a bug loads the verifier config
+      - type: bind
+        source: ./measured_boot/lernstick_policy.py
+        target: /usr/local/lib/python3.11/site-packages/keylime/elchecking/lernstick_policy.py
