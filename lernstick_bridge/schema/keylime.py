@@ -83,3 +83,13 @@ class Payload(BaseModel):
     v: bytes
     encrypted_data: str
     plain_data: str
+
+
+class AgentState(BaseModel):
+    """
+    Useful state information returned by the verifier
+    """
+    operational_state: int
+    attestation_count: int
+    severity_level: Optional[int]
+    last_event_id: Optional[str]

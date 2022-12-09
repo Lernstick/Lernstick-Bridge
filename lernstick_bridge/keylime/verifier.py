@@ -8,7 +8,7 @@ import requests
 
 from lernstick_bridge.bridge_logger import logger
 from lernstick_bridge.config import VERIFIER_URL, config
-from lernstick_bridge.schema.keylime import AgentVerifierRequest
+from lernstick_bridge.schema.keylime import AgentVerifierRequest, AgentState
 from lernstick_bridge.utils import RetrySession
 
 session = RetrySession(cert=(config.verifier.tls_cert, config.verifier.tls_priv_key),
@@ -52,7 +52,7 @@ def get_agent(agent_id: str) -> Optional[Dict[Any, Any]]:
         return None
 
 
-def get_agent_state(agent_id: str) -> Any:
+def get_agent_state(agent_id: str) -> AgentState:
     """
     Get the state of the agent from the Keylime Verifier.
 
@@ -62,7 +62,12 @@ def get_agent_state(agent_id: str) -> Any:
     # TODO this will change when the tagging proposal is implemented
     agent_data = get_agent(agent_id)
     assert agent_data is not None
-    return agent_data["operational_state"]
+    return AgentState(
+        operational_state=agent_data["operational_state"],
+        last_event_id=agent_data["last_event_id"],
+        attestation_count=agent_data["attestation_count"],
+        severity_level=agent_data["severity_level"]
+    )
 
 
 def delete_agent(agent_id: str) -> bool:

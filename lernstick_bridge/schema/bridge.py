@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field, PrivateAttr
 
 from lernstick_bridge.keylime import util
-from lernstick_bridge.schema.keylime import Payload
+from lernstick_bridge.schema.keylime import AgentState, Payload
 
 
 class Agent(BaseModel):
@@ -48,7 +48,7 @@ class AgentStatus(BaseModel):
     """
     status: str
     token: Optional[str]
-    state: Optional[str]
+    state: Optional[AgentState]
 
 
 class ActiveAgent(BaseModel):
