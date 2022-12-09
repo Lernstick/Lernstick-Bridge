@@ -4,9 +4,10 @@ Copyright 2021 Thore Sommer
 '''
 import os.path
 from tempfile import TemporaryDirectory
-from typing import Any, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import requests
+from fastapi import WebSocket
 from requests import Session
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.poolmanager import PoolManager  # pylint: disable=import-error
@@ -56,6 +57,30 @@ class RetrySession(Session):
     def __exit__(self, *_: Any) -> None:
         if self._tmp_dir is not None:
             self._tmp_dir.cleanup()
+
+
+class WebsocketConnectionManager:
+    """
+    Simple websocket connection manager.
+    """
+    active_connections: List[WebSocket]
+
+    def __init__(self) -> None:
+        self.active_connections = []
+
+    async def connect(self, websocket: WebSocket) -> None:
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket) -> None:
+        self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: str) -> None:
+        for connection in self.active_connections:
+            try:
+                await connection.send_text(message)
+            except Exception:
+                pass
 
 
 class HostNameIgnoreAdapter(HTTPAdapter):
