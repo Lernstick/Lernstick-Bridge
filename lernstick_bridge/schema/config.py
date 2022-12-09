@@ -66,6 +66,7 @@ class Config(BaseSettings):
     measured_boot_policy: Optional[str] = None
     ima_policy: Optional[str] = None
     retry_attempts: int = 4
+    cors_origins: List[str] = []
     tenant: Tenant
     verifier: Verifier
     registrar: Registrar

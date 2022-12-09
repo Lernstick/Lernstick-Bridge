@@ -6,6 +6,7 @@ import time
 
 import requests
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from lernstick_bridge.bridge import logic
 from lernstick_bridge.bridge_logger import logger
@@ -42,6 +43,15 @@ app = FastAPI(
 
 app.include_router(agents.router)
 app.include_router(keylime.router)
+
+if config.cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=config.cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"]
+    )
 
 
 @app.on_event("shutdown")
