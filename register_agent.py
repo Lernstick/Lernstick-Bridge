@@ -18,7 +18,8 @@ import requests
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
-
+from pyasn1.codec.der import decoder, encoder
+from pyasn1_modules import pem, rfc2459
 
 BRIDGE_URL = "http://localhost:8080"
 BOOT_LOG_PATH = "/sys/kernel/security/tpm0/binary_bios_measurements"
@@ -40,7 +41,11 @@ def get_ek_cert():
 
 def generate_uuid(ek_cert):
     # With https://github.com/keylime/keylime/pull/743 the uuid is the EK pubkey im PEM hashed with sha256
-    cert = x509.load_der_x509_certificate(ek_cert)
+    try:
+        cert = x509.load_der_x509_certificate(data=ek_cert)
+    except Exception:
+        pyasn1_cert = decoder.decode(ek_cert, asn1Spec=rfc2459.Certificate())[0]
+        cert = x509.load_der_x509_certificate(data=encoder.encode(pyasn1_cert))
     pubkey_pem =cert.public_key().public_bytes(encoding=serialization.Encoding.PEM,
                                                format=serialization.PublicFormat.SubjectPublicKeyInfo)
     return hashlib.sha256(pubkey_pem).hexdigest()
@@ -62,8 +67,10 @@ def get_pcrs():
 
 
 def get_boot_log():
-    with open(BOOT_LOG_PATH, 'rb') as log:
-        return base64.b64encode(log.read()).decode()
+    if os.path.exists(BOOT_LOG_PATH):
+        with open(BOOT_LOG_PATH, 'rb') as log:
+            return base64.b64encode(log.read()).decode()
+    return ""
 
 
 def main():
