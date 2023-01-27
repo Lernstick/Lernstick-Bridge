@@ -69,10 +69,12 @@ def _strict_activate_agent(agent_id: str) -> bool:  # pylint: disable=too-many-r
         if not agent.valid_ek():
             logger.error(f"EK for agent {agent_id} was invalid!")
             return False
+        logger.debug(f"EK for agent {agent_id} is valid")
 
         if not agent.do_quote():
             logger.error(f"Quote form agent {agent_id} was invalid!")
             return False
+        logger.debug(f"Quote validation for agent {agent_id} was successful")
 
         token = agent.deploy_token()
         if token is None:
