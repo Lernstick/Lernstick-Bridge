@@ -1,13 +1,74 @@
+# More complex bridge deployment with MariaDB persistent databases
+# Requires an .env file with the following variables
+# - DB_BRIDGE_PASS
+# - DB_VERIFIER_PASS
+# - DB_REGISTRAR_PASS
+
 version: "3.9"
 services:
+  db-bridge:
+    image: mariadb
+    restart: always
+    environment:
+      MARIADB_RANDOM_ROOT_PASSWORD: 1
+      MARIADB_MYSQL_LOCALHOST_USER: 1
+      MYSQL_DATABASE: 'bridge'
+      MYSQL_USER: 'bridge'
+      MYSQL_PASSWORD: ${DB_BRIDGE_PASS}
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--su=mysql", "--connect", "--innodb_initialized" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - "db-bridge-data:/var/lib/mysql"
+  db-verifier:
+    image: mariadb
+    restart: always
+    environment:
+      MARIADB_RANDOM_ROOT_PASSWORD: 1
+      MARIADB_MYSQL_LOCALHOST_USER: 1
+      MYSQL_DATABASE: 'verifier'
+      MYSQL_USER: 'keylime'
+      MYSQL_PASSWORD: ${DB_VERIFIER_PASS}
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--su=mysql", "--connect", "--innodb_initialized" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - "db-verifier-data:/var/lib/mysql"
+  db-registrar:
+    image: mariadb
+    restart: always
+    environment:
+      MARIADB_RANDOM_ROOT_PASSWORD: 1
+      MARIADB_MYSQL_LOCALHOST_USER: 1
+      MYSQL_DATABASE: 'registrar'
+      MYSQL_USER: 'keylime'
+      MYSQL_PASSWORD: 'CHANGE_ME'
+    volumes:
+     - "db-registrar-data:/var/lib/mysql"
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--su=mysql", "--connect", "--innodb_initialized" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
   bridge:
-    image: https://campla-dev.adm.ds.fhnw.ch/docker/lernstick-bridge:development
-    env_file: .docker_env
+    image: campla-dev.adm.ds.fhnw.ch/docker/lernstick-bridge:development
+    env_file: .docker_env_prod
+    environment:
+      db_url: "mysql+pymysql://bridge:${DB_BRIDGE_PASS}@db-bridge:3306/bridge?charset=utf8"   
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     depends_on:
-      - registrar
-      - verifier
+      registrar:
+        condition: service_started
+      verifier:
+        condition: service_started
+      db-bridge:
+        condition: service_healthy
     volumes:
       - type: bind
         source: ./cv_ca
@@ -17,11 +78,13 @@ services:
         target: /mb_policy.json
 
   verifier:
-    image: quay.io/keylime/keylime_verifier:sha-ccd970a
+    image: quay.io/keylime/keylime_verifier:v6.5.3
     restart: always
-    ports:
-      - "8880:8880"
-      - "8881:8881"
+    depends_on:
+      db-verifier:
+        condition: service_healthy
+    environment:
+      KEYLIME_VERIFIER_DATABASE_URL: "mysql+pymysql://keylime:${DB_VERIFIER_PASS}@db-verifier:3306/verifier?charset=utf8"
     volumes:
       - type: bind
         source: ./keylime.conf.d
@@ -33,12 +96,16 @@ services:
         source: ./measured_boot/lernstick_policy.py
         target: /usr/local/lib/python3.11/site-packages/keylime/elchecking/lernstick_policy.py
 
-
   registrar:
-    image: quay.io/keylime/keylime_registrar:sha-ccd970a
+    image: quay.io/keylime/keylime_registrar:v6.5.3
+    restart: always
+    depends_on:
+      db-registrar:
+        condition: service_healthy
+    environment:
+      KEYLIME_REGISTRAR: "mysql+pymysql://keylime:{DB_REGISTRAR_PASS}@db-registrar:3306/registrar?charset=utf8"
     ports:
       - "8890:8890"
-      - "8891:8891"
     volumes:
       - type: bind
         source: ./keylime.conf.d
@@ -47,7 +114,7 @@ services:
         source: ./cv_ca
         read_only: true
         target: /var/lib/keylime/cv_ca
-# Temporarily we need to include also the policy, because a bug loads the verifier config
-      - type: bind
-        source: ./measured_boot/lernstick_policy.py
-        target: /usr/local/lib/python3.11/site-packages/keylime/elchecking/lernstick_policy.py
+volumes:
+  db-bridge-data:
+  db-registrar-data:
+  db-verifier-data:
