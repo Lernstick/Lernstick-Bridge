@@ -9,3 +9,4 @@ pyOpenSSL>=20.0.1
 git+https://github.com/tpm2-software/tpm2-pytss.git@master#egg=tpm2-pytss
 PyYAML>=5.4.1
 websockets>=10.4
+PyMySQL>=1.0.2
