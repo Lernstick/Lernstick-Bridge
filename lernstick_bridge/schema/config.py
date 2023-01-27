@@ -58,6 +58,7 @@ class Config(BaseSettings):
     keylime_verifier: str = "https://localhost:8881"
     tpm_cert_store: Optional[Path] = None
     mode: str = "strict"  # TODO replace with Enum
+    log_level: str = "info"
     # Validate EK Cert when a agent is registered. Only disable for debugging or if some devices dont have an EK cert
     validate_ek_registration: bool = True
     db_url: str = "sqlite:///./sql_app.db"
