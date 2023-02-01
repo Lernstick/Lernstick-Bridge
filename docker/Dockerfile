@@ -18,10 +18,11 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
 COPY requirements.txt /requirements.txt
 RUN pip3 install -r requirements.txt
 
-COPY . /lernstick
-WORKDIR /lernstick
+# Ship cert store in the container by default
+COPY tpm_cert_store /lernstick/tpm_cert_store
 
-RUN python3 setup.py install
+RUN --mount=target=/bridge,type=bind,source=.,rw \
+    cd bridge && python3 setup.py install
 
 EXPOSE 8080
 
