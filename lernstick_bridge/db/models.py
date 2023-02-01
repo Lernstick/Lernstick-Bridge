@@ -4,7 +4,7 @@ Copyright 2021 Thore Sommer
 '''
 # pylint: disable=too-few-public-methods
 
-from sqlalchemy import Column, DateTime, String
+from sqlalchemy import Column, DateTime, String, Text
 
 from lernstick_bridge.db.database import Base
 
@@ -28,7 +28,7 @@ class Agent(Base):
     pcr_6 = Column(String(100), nullable=True)
     pcr_7 = Column(String(100), nullable=True)
     # Reference of the boot event log. Used for improving the measured boot policies
-    event_log_reference = Column(String(100), nullable=True)
+    event_log_reference = Column(Text(), nullable=True)
 
 
 class ActiveAgent(Base):
