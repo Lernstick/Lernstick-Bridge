@@ -7,9 +7,12 @@ import datetime
 from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field, PrivateAttr
+from pydantic.utils import GetterDict
 
+from lernstick_bridge.db.models import KeylimePolicy as DbKeylimePolicy
 from lernstick_bridge.keylime import util
 from lernstick_bridge.schema.keylime import AgentState, Payload
+from lernstick_bridge.utils import Flag
 
 
 class Agent(BaseModel):
@@ -92,6 +95,63 @@ class RevocationMessage(BaseModel):
     event_id: Optional[str]
     severity_label: Optional[str]
     context: Optional[Dict[Any, Any]]
+
+
+class KeylimePolicyGetter(GetterDict):
+    """
+    Getter that converts flag into boolean for KeylimePolicy.
+    """
+    def get(self, key: Any, default: Any = None) -> Any:
+        """
+        If key is "active" it checks if the flag is set and converts it to a boolean.
+
+        :param key: to look up.
+        :param default: default value if key cannot be found:
+        :return: The lookup of key or the default value if not found.
+        """
+        value = getattr(self._obj, key, default)
+        if key == "active":
+            return value is Flag.SET
+        return value
+
+
+class KeylimePolicy(BaseModel):
+    """
+    Policy that is used to configure Keylime.
+
+    Note: The ORM model is slightly different, due how we enforce that only one policy can be active at the time
+    """
+    policy_id: str
+    active: bool
+    runtime_policy: Dict[str, Any]
+    mb_refstate: Dict[Any, Any]
+
+    class Config:  # pylint: disable=missing-class-docstring
+        orm_mode = True
+        getter_dict = KeylimePolicyGetter
+
+
+class KeylimePolicyAdd(BaseModel):
+    """
+    KeylimePolicy object for adding the configuration to the bridge.
+    It excludes the active option, because all policies are inactive by default.
+    """
+    policy_id: str
+    runtime_policy: Dict[str, Any]
+    mb_refstate: Dict[Any, Any]
+
+    def to_orm(self) -> DbKeylimePolicy:
+        """
+        Creates ORM model object.
+
+        :return: KeylimePolicy database object.
+        """
+        return DbKeylimePolicy(
+            policy_id=self.policy_id,
+            active=None,
+            runtime_policy=self.runtime_policy,
+            mb_refstate=self.mb_refstate,
+        )
 
 
 class HTTPError(BaseModel):

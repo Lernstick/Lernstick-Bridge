@@ -2,6 +2,7 @@
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
+import enum
 import os.path
 from tempfile import TemporaryDirectory
 from typing import Any, List, Optional, Tuple, Union
@@ -112,3 +113,10 @@ class HostNameIgnoreAdapter(HTTPAdapter):
                                        block=block,
                                        strict=True,
                                        assert_hostname=False, **pool_kwargs)
+
+
+class Flag(enum.Enum):
+    """
+    Flag that is used by the SQL layer to implement exclusive flag entries.
+    """
+    SET = True

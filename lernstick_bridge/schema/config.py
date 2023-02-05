@@ -64,9 +64,6 @@ class Config(BaseSettings):
     db_url: str = "sqlite:///./sql_app.db"
     revocation_webhook: Optional[str] = None
     revocation_websocket: bool = False
-    # Make sure that the keylime.conf includes the correct module to parse the policy
-    measured_boot_policy: Optional[str] = None
-    ima_policy: Optional[str] = None
     retry_attempts: int = 4
     cors_origins: List[str] = []
     tenant: Tenant

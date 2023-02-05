@@ -86,6 +86,12 @@ async def startup() -> None:
     if not config.revocation_webhook:
         logger.warning("No revocation webhook is specified. Systems will not be notified when a revocation occurs!")
 
+    keylime_policy = crud.get_active_keylime_policy()
+    if keylime_policy is None:
+        logger.warning("No Keylime policy is currently active!")
+    else:
+        logger.info("Current active Keylime policy is %s", keylime_policy.policy_id)
+
     if config.mode == "relaxed":
         # Wait for registrar to come available
         session = RetrySession(ignore_hostname=True)

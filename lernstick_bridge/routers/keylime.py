@@ -2,8 +2,10 @@
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
+from typing import Any, Dict, List
+
 import anyio
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from starlette.background import BackgroundTasks
 
 from lernstick_bridge.bridge import logic
@@ -77,3 +79,100 @@ async def revocation(
         await manager.broadcast(message.json())
     background_task.add_task(logic.send_revocation, message.msg)
     return True
+
+
+# Routes for Keylime policy management
+@router.get("/policy", response_model=List[bridge.KeylimePolicy], tags=["keylime"])
+def list_keylime_policies() -> List[bridge.KeylimePolicy]:
+    """
+    Lists all currently available policies.
+
+    :return: List of Keylime policies
+    """
+    return crud.get_keylime_policies()
+
+
+@router.get("/policy/{policy_id}", response_model=bridge.KeylimePolicy, tags=["keylime"],
+            responses={404: {"model": bridge.HTTPError, "description": "If the Keylime policy cannot be found"}})
+def get_keylime_policy(policy_id: str) -> bridge.KeylimePolicy:
+    """
+    Gets the Keylime policy by id.
+
+    :param policy_id: ID of the Keylime policy
+    :return: KeylimePolicy
+    """
+    keylime_policy = crud.get_keylime_policy(policy_id)
+    if keylime_policy is None:
+        raise HTTPException(404, detail="Keylime policy found in the database")
+    return keylime_policy
+
+
+@router.post("/policy", tags=["keylime"],
+             response_model=bridge.KeylimePolicyAdd,
+             responses={409: {"model": bridge.HTTPError, "description": "Keylime policy is already in the database"}})
+def add_keylime_policy(keylime_policy: bridge.KeylimePolicyAdd) -> bridge.KeylimePolicy:
+    """
+    Add Keylime policy to the bridge.
+
+    :param keylime_policy: the policy to add.
+    :return: The created policy
+    """
+    added_keylime_policy = crud.add_keylime_policy(keylime_policy)
+    if added_keylime_policy is None:
+        raise HTTPException(409, "Keylime policy is already in the database")
+
+    return added_keylime_policy
+
+
+@router.delete("/policy/{policy_id}", tags=["keylime"],
+             response_model=Dict[Any, Any],
+             responses={404: {"model": bridge.HTTPError, "description": "If policy is not in the database"}})
+def delete_keylime_policy(policy_id: str) -> Dict[Any, Any]:
+    """
+    Delete a keylime policy.
+
+    :param policy_id: ID of the Keylime policy
+    :return: Empty dict if successful
+    """
+    res = crud.delete_keylime_policy(policy_id)
+    if res is None:
+        raise HTTPException(404, "Policy is not in database")
+    return {}
+
+
+@router.get("/policy/{policy_id}/activate", tags=["keylime"],
+            response_model=Dict[Any, Any],
+            responses={404: {"model": bridge.HTTPError, "description": "If policy is not in the database"}})
+def activate_keylime_policy(policy_id: str) -> Dict[Any, Any]:
+    """
+    Activate Keylime policy. The old active policy gets deactivated.
+
+    :param policy_id: ID of the Keylime policy
+    :return: Empty dict if successful
+    """
+    if not crud.get_keylime_policy(policy_id):
+        raise HTTPException(404, "Policy is not in database")
+
+    if not crud.activate_keylime_policy(policy_id):
+        raise HTTPException(500, "Policy could not be activated")
+
+    return {}
+
+
+@router.get("/policy/{policy_id}/deactivate",
+            response_model=Dict[Any, Any],
+            responses={404: {"model": bridge.HTTPError, "description": "If policy is not in the database"}})
+def deactivate_keylime_policy(policy_id: str) -> Dict[Any, Any]:
+    """
+    Deactivate Keylime policy.
+
+    :param policy_id: ID of the Keylime policy
+    :return: Empty dict if successful
+    """
+    if not crud.get_keylime_policy(policy_id):
+        raise HTTPException(404, "Policy is not in database")
+
+    if not crud.deactivate_keylime_policy(policy_id):
+        raise HTTPException(500, "Policy could not be deactivated")
+
+    return {}

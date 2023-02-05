@@ -8,6 +8,7 @@ from typing import List, Optional
 from pydantic import parse_obj_as
 from sqlalchemy.exc import SQLAlchemyError
 
+import lernstick_bridge.utils
 from lernstick_bridge.db import models
 from lernstick_bridge.db.database import db
 from lernstick_bridge.schema import bridge
@@ -150,7 +151,7 @@ def get_active_agents() -> List[bridge.ActiveAgent]:
 
 def delete_active_agent(agent_id: str) -> bool:
     """
-    Delete a active agent.
+    Delete an active agent.
 
     :param agent_id: the agent UUID
     :return: True if successful and False if agent is not active
@@ -174,3 +175,109 @@ def get_token(token: str) -> Optional[bridge.Token]:
     if not token:
         return None
     return bridge.Token.from_orm(token)
+
+
+def get_keylime_policies() -> List[bridge.KeylimePolicy]:
+    """
+    Get all Keylime policies.
+
+    :return: List of Keylime policies
+    """
+    db_policies = db.query(models.KeylimePolicy).all()
+    return parse_obj_as(List[bridge.KeylimePolicy], db_policies)
+
+
+def get_keylime_policy(policy_id: str) -> Optional[bridge.KeylimePolicy]:
+    """
+    Get policy by ID.
+
+    :param policy_id: The ID of the policy
+    :return: The Keylime policy or None if it does not exists.
+    """
+    db_keylime_policy = db.query(models.KeylimePolicy).filter(models.KeylimePolicy.policy_id == policy_id).first()
+    if db_keylime_policy is None:
+        return None
+    return bridge.KeylimePolicy.from_orm(db_keylime_policy)
+
+
+def add_keylime_policy(keylime_policy: bridge.KeylimePolicyAdd) -> Optional[bridge.KeylimePolicy]:
+    """
+    Add a new Keylime policy to the database
+
+    :param keylime_policy: The policy that get added
+    :return: The added policy or None if already a policy with the same ID exists
+    """
+    db_entry = db.query(models.KeylimePolicy).filter(models.KeylimePolicy.policy_id == keylime_policy.policy_id).first()
+    if db_entry:
+        return None
+
+    db_keylime_policy = keylime_policy.to_orm()
+    db.add(db_keylime_policy)
+    db.commit()
+    db.refresh(db_keylime_policy)
+    return bridge.KeylimePolicy.from_orm(db_keylime_policy)
+
+
+def delete_keylime_policy(policy_id: str) -> bool:
+    """
+    Delete Keylime policy from database.
+
+
+    :param policy_id: The ID of the Keylime policy
+    :return: The
+    """
+    db_policy = db.query(models.KeylimePolicy).filter(models.KeylimePolicy.policy_id == policy_id).first()
+    if db_policy is None:
+        return False
+    db.delete(db_policy)
+    db.commit()
+    return True
+
+
+def activate_keylime_policy(policy_id: str) -> bool:
+    """
+    Activate a different
+
+    This automatically deactivates the old active policy.
+
+    :param policy_id: the ID of the policy
+    :return: False if the policy id could not be found and True if successful
+    """
+    db_new_active = db.query(models.KeylimePolicy).filter(models.KeylimePolicy.policy_id == policy_id).first()
+    if db_new_active is None:
+        return False
+    db_current_active = db.query(models.KeylimePolicy).filter(models.KeylimePolicy.active == lernstick_bridge.utils.Flag.SET).first()
+    if db_current_active:
+        db_current_active.active = None
+    db_new_active.active = lernstick_bridge.utils.Flag.SET
+    db.commit()
+    return True
+
+
+def deactivate_keylime_policy(policy_id: str) -> bool:
+    """
+    Deactivates a policy.
+
+
+    :return: False if policy is not found or not active, otherwise True
+    """
+    db_policy = db.query(models.KeylimePolicy).filter(models.KeylimePolicy.policy_id == policy_id).first()
+    if db_policy is None:
+        return False
+    if db_policy.active is None:
+        return False
+    db_policy.active = None
+    db.commit()
+    return True
+
+
+def get_active_keylime_policy() -> Optional[bridge.KeylimePolicy]:
+    """
+    Get current active policy
+
+    :return: Active Policy or None if there is no active policy.
+    """
+    db_active = db.query(models.KeylimePolicy).filter(models.KeylimePolicy.active == lernstick_bridge.utils.Flag.SET).first()
+    if db_active is None:
+        return None
+    return bridge.KeylimePolicy.from_orm(db_active)

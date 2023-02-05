@@ -3,10 +3,13 @@ SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
 # pylint: disable=too-few-public-methods
+import json
 
-from sqlalchemy import Column, DateTime, String, Text
+from sqlalchemy import Column, DateTime, Enum, String, Text
+from sqlalchemy.types import TypeDecorator
 
 from lernstick_bridge.db.database import Base
+from lernstick_bridge.utils import Flag
 
 
 class Agent(Base):
@@ -39,3 +42,34 @@ class ActiveAgent(Base):
     agent_id = Column(String(100), primary_key=True, index=True)
     token = Column(String(100), unique=True, index=True)  # Tokens are assumed to be be unique so we enforce that in the database
     timeout = Column(DateTime, nullable=True)  # If timeout is NULL it means that the agent is always valid.
+
+
+class JSONEncodedDict(TypeDecorator):
+    """
+    Represents an immutable structure as a json-encoded string.
+    Based on the example in the sqlalchemy docs.
+    """
+
+    impl = Text
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            value = json.dumps(value)
+
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            value = json.loads(value)
+        return value
+
+
+class KeylimePolicy(Base):
+    """
+    Database model for the Keylime policies.
+    """
+    __tablename__ = "keylime_policies"
+    policy_id = Column(String(100), primary_key=True, index=True)
+    runtime_policy = Column(JSONEncodedDict(), nullable=True)
+    mb_refstate = Column(JSONEncodedDict(), nullable=True)
+    active = Column(Enum(Flag), nullable=True, unique=True)

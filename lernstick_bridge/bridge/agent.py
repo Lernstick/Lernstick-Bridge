@@ -7,11 +7,12 @@ import base64
 import copy
 import datetime
 import json
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from pydantic import BaseModel, PrivateAttr, root_validator
 
 from lernstick_bridge import config
+from lernstick_bridge.bridge_logger import logger
 from lernstick_bridge.db import crud
 from lernstick_bridge.keylime import agent, ek, registrar, util, verifier
 from lernstick_bridge.schema.bridge import Agent, Token
@@ -113,7 +114,8 @@ class AgentBridge(BaseModel):
             raise ValueError("Token must be deployed before adding agent to the verifier")
 
         assert self.registrar_data
-        ima_policy_bundle, ima_keyring = self._get_ima_policy()
+        # Make sure that the verifier.conf includes the correct module to parse the mb_refstate
+        mb_refstate, ima_policy_bundle, ima_keyring = self._get_keylime_policy()
         request = AgentVerifierRequest(
             v=base64.b64encode(self._token.to_payload().v).decode("utf-8"),
             cloudagent_ip=self.registrar_data.ip,
@@ -121,7 +123,7 @@ class AgentBridge(BaseModel):
             tpm_policy=json.dumps(self._get_tpm_policy()),
             ima_policy_bundle=json.dumps(ima_policy_bundle),
             ima_sign_verification_keys=json.dumps(ima_keyring),
-            mb_refstate=json.dumps(self._get_mb_refstate()),
+            mb_refstate=json.dumps(mb_refstate),
             ak_tpm=self.registrar_data.aik_tpm,
             mtls_cert=self.registrar_data.mtls_cert,
         )
@@ -156,35 +158,42 @@ class AgentBridge(BaseModel):
         """
         output: Dict[str, Any] = {}
         used_pcrs = None
-        use_ima_pcr = config.IMA_POLICY is not None
+        keylime_policy = crud.get_active_keylime_policy()
+        use_ima_pcr = keylime_policy is not None and keylime_policy.runtime_policy is not None
         if self.strict:
             assert self.agent
+            # Note: Keylime only uses the static policy if no measured boot policy is specified for those PCRs
             output["0"] = self.agent.pcr_0  # Firmware PCR
             used_pcrs = [0]
 
         output["mask"] = util.generate_mask(used_pcrs, measured_boot=True, ima=use_ima_pcr)
         return output
 
-    def _get_mb_refstate(self) -> Dict[str, Any]:
-        mb_refstate = copy.deepcopy(config.MB_POLICY)
-        if self.agent:
-            assert self.strict
-            mb_refstate["crtm"] = self.agent.pcr_0
-        return mb_refstate
-
-    @staticmethod
-    def _get_ima_policy() -> Tuple[Dict[str, Any], Optional[Dict[str, List[str]]]]:
+    def _get_keylime_policy(self) -> Tuple[Dict[str, Any], Dict[str, Any], Optional[Dict[str, Any]]]:
         """
-        Construct global IMA policy.
+        Generates IMA and reference boot state for the agent based on the policy currently configured.
+        Defaults to an empty policy if no policy is active.
 
-        :return: IMA policy bundle and IMA keyring
+        :return: Keylime configuration
         """
-        ima_policy_bundle = {}
+        keylime_policy = crud.get_active_keylime_policy()
+        mb_refstate: Dict[str, Any] = {}
+        ima_policy_bundle: Dict[str, Any] = {}
         ima_keyring = None
-        if config.IMA_POLICY:
-            ima_policy_bundle["ima_policy"] = config.IMA_POLICY["ima_policy"]
-            ima_policy_bundle["excllist"] = config.IMA_POLICY["excllist"]
+        if keylime_policy is None:
+            logger.warning("No keylime policy is specified. Using empty policy!")
+            return mb_refstate, ima_policy_bundle, ima_keyring
+
+        if keylime_policy.mb_refstate:
+            mb_refstate = copy.deepcopy(keylime_policy.mb_refstate)
+            if self.agent:
+                assert self.strict
+                mb_refstate["crtm"] = self.agent.pcr_0
+        if keylime_policy.runtime_policy:
+            ima_policy_bundle["ima_policy"] = keylime_policy.runtime_policy["ima_policy"]
+            ima_policy_bundle["excllist"] = keylime_policy.runtime_policy["excllist"]
             ima_policy_bundle["checksum"] = ""
-            if config.IMA_POLICY.get("keyring"):
-                ima_keyring = config.IMA_POLICY["keyring"]
-        return ima_policy_bundle, ima_keyring
+            if keylime_policy.runtime_policy.get("keyring"):
+                ima_keyring = keylime_policy.runtime_policy["keyring"]
+
+        return mb_refstate, ima_policy_bundle, ima_keyring
