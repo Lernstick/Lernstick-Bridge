@@ -82,9 +82,6 @@ services:
         source: "${TLS_DIR}"
         read_only: true
         target: /ca
-      - type: bind
-        source: ./measured_boot/mb_policy.json
-        target: /mb_policy.json
 
   verifier:
     image: quay.io/keylime/keylime_verifier:v6.5.3

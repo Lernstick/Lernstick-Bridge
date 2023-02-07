@@ -14,9 +14,6 @@ services:
       - type: bind
         source: ./cv_ca
         target: /cv_ca
-      - type: bind
-        source: ./measured_boot/mb_policy.json
-        target: /mb_policy.json
 
   verifier:
     image: quay.io/keylime/keylime_verifier:v6.5.3
