@@ -14,7 +14,7 @@ but this doesn't work in our case. Please run: `./setup_ca.sh`.
 This will create an folder `cv_ca` which contains the shared CA.
 
 ## Configuring the Bridge and Keylime
-For Keylime the project ships with a pre-configured `keylime.conf` which shouldn't need any changes.
+For Keylime the project ships with a pre-configured `keylime.conf.d` directory which shouldn't need any changes.
 A development configuration for the Bridge can be found under `.docker_env` which works out of the box.
 
 Depending on Bridge usage the following values might need some change:
@@ -30,20 +30,17 @@ Just run `docker compose -f docker-compose-local.yml up`.
  * Ensure that the device has a TPM2.0
  * Download Debian 11 from: https://www.debian.org/download
  * Install Debian 11 on the device with Secure Boot enabled 
- * Install Keylime packages
-   * Either install them from the Lernstick repository with `apt install python3-keylime-agent python3-keylime-defaultconf`
-   * Or build them locally (see below) and
-     install them with `apt install ./python3-keylime-lib*.deb ./python3-keylime-defaultconf*.deb ./python3-keylime-agent*.deb`
+ * Install rust agent either from the Lernstick repos or using [cargo deb](https://github.com/keylime/rust-keylime/#building-debian-package-with-cargo-deb).
  * Copy `cv_ca/cacert.crt` Keylime CA certificate to the device to `/var/lib/keylime/cacert.crt`.
 
-Changes to `/etc/keylime.conf`:
+Changes to `/etc/keylime/agent.conf`:
 
- * `[cloud_agent]` section
-   * `cloudagent_ip` change to `0.0.0.0`
-   * `agent_contact_ip` change to the devices IP address reachable by the Bridge. E.g. `192.168.0.1`.
+ * `[agent]` section
+   * `ip` change to `0.0.0.0`
+   * `contact_ip` change to the devices IP address reachable by the Bridge. E.g. `192.168.0.1`.
    * `registrar_ip` change to IP where the Bridge is running
-   * `agent_uuid` change to `hash_ek`
-   * `keylime_ca` change to `/var/lib/keylime/cacert.crt`
+   * `uuid` change to `hash_ek`
+   * `trusted_client_ca` change to `/var/lib/keylime/cacert.crt`
    * `tpm_hash_alg` change to `sha256`
 
 Now restart the agent with `systemctl restart keylime_agent`.
@@ -56,13 +53,3 @@ The script is only a reference implementation and normally the agents shouldn't 
 the Bridge.
 
 Usage: `python3 register_agent.py "http://BRIDGE_IP:BRIDGE_PORT"`
-
-## Building the Keylime Debian Package
-For the agent Keylime versions 6.3.0 later will work with the Lernstick Bridge.
-
-* Clone package: `git clone https://github.com/utkarsh2102/python-keylime && cd python-keylime`
-* Install build requirements: `apt install build-essential git-buildpackage dh-exec dh-python python3-alembic python3-all python3-cryptography python3-dbus python3-gnupg python3-packaging python3-psutil python3-requests python3-setuptools python3-sqlalchemy python3-tornado python3-yaml python3-zmq tpm-udev tpm2-tools`
-* Build package: `gbp buildpackage -uc -us`
-
-# Known Issues
-* Agent won't restart: Kill the agent with `systemctl kill keylime_agen.service` and then restart it.
