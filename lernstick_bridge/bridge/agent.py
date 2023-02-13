@@ -190,5 +190,5 @@ class AgentBridge(BaseModel):
 
         return mb_refstate, keylime_policy.runtime_policy
 
-    class Config:
+    class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
         arbitrary_types_allowed = True

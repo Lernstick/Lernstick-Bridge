@@ -4,6 +4,7 @@ Copyright 2021 Thore Sommer
 '''
 # pylint: disable=too-few-public-methods
 import json
+from typing import Any
 
 from sqlalchemy import Column, DateTime, Enum, String, Text
 from sqlalchemy.types import TypeDecorator
@@ -44,7 +45,7 @@ class ActiveAgent(Base):
     timeout = Column(DateTime, nullable=True)  # If timeout is NULL it means that the agent is always valid.
 
 
-class JSONEncodedDict(TypeDecorator):
+class JSONEncodedDict(TypeDecorator[Any]):  # pylint: disable=abstract-method,too-many-ancestors
     """
     Represents an immutable structure as a json-encoded string.
     Based on the example in the sqlalchemy docs.
@@ -52,13 +53,13 @@ class JSONEncodedDict(TypeDecorator):
 
     impl = Text
 
-    def process_bind_param(self, value, dialect):
+    def process_bind_param(self, value: Any, dialect: Any) -> None:
         if value is not None:
             value = json.dumps(value)
 
         return value
 
-    def process_result_value(self, value, dialect):
+    def process_result_value(self, value: Any, dialect: Any) -> None:
         if value is not None:
             value = json.loads(value)
         return value

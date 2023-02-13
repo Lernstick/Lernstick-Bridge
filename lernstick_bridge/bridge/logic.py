@@ -238,6 +238,6 @@ def send_revocation(message: RevocationMsg) -> None:
                                 context=message.context)
     logger.info(f"Sending revocation message: {message}")
     try:
-        session.post(url, data=new_msg)
+        session.post(url, json=new_msg.json())
     except requests.exceptions.RequestException as e:
         logger.error(f"Couldn't send revocation message \"{new_msg}\" via webhook: {e}")

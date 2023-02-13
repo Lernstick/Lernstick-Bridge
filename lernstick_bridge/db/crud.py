@@ -9,9 +9,9 @@ from pydantic import parse_obj_as
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-import lernstick_bridge.utils
 from lernstick_bridge.db import models
 from lernstick_bridge.schema import bridge
+from lernstick_bridge.utils import Flag
 
 
 def get_agent(db: Session, agent_id: str) -> Optional[bridge.Agent]:
@@ -182,10 +182,10 @@ def get_token(db: Session, token: str) -> Optional[bridge.Token]:
     :param token: the token as a string
     :return: the token object or None if not found
     """
-    token = db.query(models.ActiveAgent).filter(models.ActiveAgent.token == token).first()
-    if not token:
+    db_token = db.query(models.ActiveAgent).filter(models.ActiveAgent.token == token).first()
+    if not db_token:
         return None
-    return bridge.Token.from_orm(token)
+    return bridge.Token.from_orm(db_token)
 
 
 def get_keylime_policies(db: Session) -> List[bridge.KeylimePolicy]:
@@ -261,10 +261,10 @@ def activate_keylime_policy(db: Session, policy_id: str) -> bool:
     db_new_active = db.query(models.KeylimePolicy).filter(models.KeylimePolicy.policy_id == policy_id).first()
     if db_new_active is None:
         return False
-    db_current_active = db.query(models.KeylimePolicy).filter(models.KeylimePolicy.active == lernstick_bridge.utils.Flag.SET).first()
+    db_current_active = db.query(models.KeylimePolicy).filter(models.KeylimePolicy.active == Flag.SET).first()
     if db_current_active:
         db_current_active.active = None
-    db_new_active.active = lernstick_bridge.utils.Flag.SET
+    db_new_active.active = Flag.SET  # type: ignore[assignment]
     db.commit()
     return True
 
@@ -293,7 +293,7 @@ def get_active_keylime_policy(db: Session) -> Optional[bridge.KeylimePolicy]:
     :param db: Session to DB
     :return: Active Policy or None if there is no active policy.
     """
-    db_active = db.query(models.KeylimePolicy).filter(models.KeylimePolicy.active == lernstick_bridge.utils.Flag.SET).first()
+    db_active = db.query(models.KeylimePolicy).filter(models.KeylimePolicy.active == Flag.SET).first()
     if db_active is None:
         return None
     return bridge.KeylimePolicy.from_orm(db_active)

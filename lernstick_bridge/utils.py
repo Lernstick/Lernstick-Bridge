@@ -70,17 +70,32 @@ class WebsocketConnectionManager:
         self.active_connections = []
 
     async def connect(self, websocket: WebSocket) -> None:
+        """
+        Add websocket to list of active connections.
+
+        :param websocket: Websocket that should be connected to
+        """
         await websocket.accept()
         self.active_connections.append(websocket)
 
     def disconnect(self, websocket: WebSocket) -> None:
+        """
+        Remove websocket from list of active connections.
+
+        :param websocket: the websocket that should be removed
+        """
         self.active_connections.remove(websocket)
 
     async def broadcast(self, message: str) -> None:
+        """
+        Broadcast message to all connected sockets.
+
+        :param message: the message that should be sent
+        """
         for connection in self.active_connections:
             try:
                 await connection.send_text(message)
-            except Exception:
+            except Exception:  # pylint: disable=broad-exception-caught
                 pass
 
 

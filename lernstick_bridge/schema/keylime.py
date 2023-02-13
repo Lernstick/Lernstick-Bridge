@@ -61,7 +61,7 @@ class RevocationMsg(BaseModel):
     event_time: str
     event_id: Optional[str]
     severity_label: Optional[str]
-    context: Optional[Json]
+    context: Optional[Json]  # type: ignore[type-arg]
 
 
 class RevocationResp(BaseModel):
@@ -69,7 +69,7 @@ class RevocationResp(BaseModel):
     Revocation message send by Keylime on agent failure with an optional signature.
     We do not use the signature feature because we can trust the Keylime Verifier directly.
     """
-    msg: Union[Json[RevocationMsg], RevocationMsg]  # type: ignore # pylint: disable=E1136
+    msg: Union[Json[RevocationMsg], RevocationMsg]  # pylint: disable=E1136
     signature: Optional[str]
 
 
