@@ -3,9 +3,11 @@ SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
 
+from typing import Iterator
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 
 from lernstick_bridge.config import config
 
@@ -22,4 +24,15 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
-db = SessionLocal()
+
+def get_db() -> Iterator[Session]:
+    """
+    Get DB Session for API routes.
+
+    :return: DB Session that gets closed after use
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

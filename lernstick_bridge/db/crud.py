@@ -7,17 +7,18 @@ from typing import List, Optional
 
 from pydantic import parse_obj_as
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 import lernstick_bridge.utils
 from lernstick_bridge.db import models
-from lernstick_bridge.db.database import db
 from lernstick_bridge.schema import bridge
 
 
-def get_agent(agent_id: str) -> Optional[bridge.Agent]:
+def get_agent(db: Session, agent_id: str) -> Optional[bridge.Agent]:
     """
     Get an agent from the database.
 
+    :param db: Session to DB
     :param agent_id: the agent UUID
     :return: the agent or None if not found
     """
@@ -31,21 +32,23 @@ def get_agent(agent_id: str) -> Optional[bridge.Agent]:
     return bridge.Agent.from_orm(agent)
 
 
-def get_agents() -> List[bridge.Agent]:
+def get_agents(db: Session) -> List[bridge.Agent]:
     """
     Get all agents from the database
 
+    :param db: Session to DB
     :return: List of agents
     """
     agents = db.query(models.Agent).all()
     return parse_obj_as(List[bridge.Agent], agents)
 
 
-def add_agent(agent: bridge.Agent) -> bridge.Agent:
+def add_agent(db: Session, agent: bridge.Agent) -> bridge.Agent:
     """
     Add an agent to the database.
     Note this will not check if the agent already exists in the database.
 
+    :param db: Session to DB
     :param agent: the agent to add
     :return: the agent stored in the database
     """
@@ -56,10 +59,11 @@ def add_agent(agent: bridge.Agent) -> bridge.Agent:
     return bridge.Agent.from_orm(db_agent)
 
 
-def delete_agent(agent_id: str) -> bool:
+def delete_agent(db: Session, agent_id: str) -> bool:
     """
     Removes an agent from the database.
 
+    :param db: Session to DB
     :param agent_id: the agent UUID
     :return: True if successful and False if no agent with that agent_id was found the the database
     """
@@ -71,10 +75,11 @@ def delete_agent(agent_id: str) -> bool:
     return True
 
 
-def update_agent(agent: bridge.Agent) -> bool:
+def update_agent(db: Session, agent: bridge.Agent) -> bool:
     """
     Updates an agent in the database.
 
+    :param db: Session to DB
     :param agent: agent with fields that should not change set to None
     :return: True if successful
     """
@@ -87,17 +92,18 @@ def update_agent(agent: bridge.Agent) -> bool:
     return True
 
 
-def add_active_agent(agent_id: str, token: str, timeout: Optional[datetime.datetime] = None) -> bool:
+def add_active_agent(db: Session, agent_id: str, token: str, timeout: Optional[datetime.datetime] = None) -> bool:
     """
     Store the activation of an agent in the database.
 
+    :param db: Session to DB
     :param agent_id: the agent UUID
     :param token: token that is deployed to that agent. Note this value must be unique
     :param timeout: (only used in relaxed mode) when the agent should be removed automatically from attestation.
                     Set to None to never expire.
     :return: True if the action was successful
     """
-    if get_active_agent(agent_id):
+    if get_active_agent(db, agent_id):
         return False
 
     active_agent = models.ActiveAgent(
@@ -110,10 +116,11 @@ def add_active_agent(agent_id: str, token: str, timeout: Optional[datetime.datet
     return True
 
 
-def set_timeout_active_agent(agent_id: str, timeout: Optional[datetime.datetime]) -> bool:
+def set_timeout_active_agent(db: Session, agent_id: str, timeout: Optional[datetime.datetime]) -> bool:
     """
     Set or change the timeout of an active agent.
 
+    :param db: Session to DB
     :param agent_id: the agent UUID
     :param timeout: new timeout to set. Set to None to never expire
     :return: Ture if action was successful and False if agent is not active
@@ -126,10 +133,11 @@ def set_timeout_active_agent(agent_id: str, timeout: Optional[datetime.datetime]
     return True
 
 
-def get_active_agent(agent_id: str) -> Optional[bridge.ActiveAgent]:
+def get_active_agent(db: Session, agent_id: str) -> Optional[bridge.ActiveAgent]:
     """
     Get an active agent.
 
+    :param db: Session to DB
     :param agent_id: the agent UUID
     :return: The agent or None if not found
     """
@@ -139,20 +147,22 @@ def get_active_agent(agent_id: str) -> Optional[bridge.ActiveAgent]:
     return bridge.ActiveAgent.from_orm(agent)
 
 
-def get_active_agents() -> List[bridge.ActiveAgent]:
+def get_active_agents(db: Session) -> List[bridge.ActiveAgent]:
     """
     Get a list of all active agents.
 
+    :param db: Session to DB
     :return: the list of all active agents
     """
     agents = db.query(models.ActiveAgent).all()
     return parse_obj_as(List[bridge.ActiveAgent], agents)
 
 
-def delete_active_agent(agent_id: str) -> bool:
+def delete_active_agent(db: Session, agent_id: str) -> bool:
     """
     Delete an active agent.
 
+    :param db: Session to DB
     :param agent_id: the agent UUID
     :return: True if successful and False if agent is not active
     """
@@ -164,10 +174,11 @@ def delete_active_agent(agent_id: str) -> bool:
     return True
 
 
-def get_token(token: str) -> Optional[bridge.Token]:
+def get_token(db: Session, token: str) -> Optional[bridge.Token]:
     """
     Get token object with the agent id from the database.
 
+    :param db: Session to DB
     :param token: the token as a string
     :return: the token object or None if not found
     """
@@ -177,20 +188,22 @@ def get_token(token: str) -> Optional[bridge.Token]:
     return bridge.Token.from_orm(token)
 
 
-def get_keylime_policies() -> List[bridge.KeylimePolicy]:
+def get_keylime_policies(db: Session) -> List[bridge.KeylimePolicy]:
     """
     Get all Keylime policies.
 
+    :param db: Session to DB
     :return: List of Keylime policies
     """
     db_policies = db.query(models.KeylimePolicy).all()
     return parse_obj_as(List[bridge.KeylimePolicy], db_policies)
 
 
-def get_keylime_policy(policy_id: str) -> Optional[bridge.KeylimePolicy]:
+def get_keylime_policy(db: Session, policy_id: str) -> Optional[bridge.KeylimePolicy]:
     """
     Get policy by ID.
 
+    :param db: Session to DB
     :param policy_id: The ID of the policy
     :return: The Keylime policy or None if it does not exists.
     """
@@ -200,10 +213,11 @@ def get_keylime_policy(policy_id: str) -> Optional[bridge.KeylimePolicy]:
     return bridge.KeylimePolicy.from_orm(db_keylime_policy)
 
 
-def add_keylime_policy(keylime_policy: bridge.KeylimePolicyAdd) -> Optional[bridge.KeylimePolicy]:
+def add_keylime_policy(db: Session, keylime_policy: bridge.KeylimePolicyAdd) -> Optional[bridge.KeylimePolicy]:
     """
     Add a new Keylime policy to the database
 
+    :param db: Session to DB
     :param keylime_policy: The policy that get added
     :return: The added policy or None if already a policy with the same ID exists
     """
@@ -218,11 +232,11 @@ def add_keylime_policy(keylime_policy: bridge.KeylimePolicyAdd) -> Optional[brid
     return bridge.KeylimePolicy.from_orm(db_keylime_policy)
 
 
-def delete_keylime_policy(policy_id: str) -> bool:
+def delete_keylime_policy(db: Session, policy_id: str) -> bool:
     """
     Delete Keylime policy from database.
 
-
+    :param db: Session to DB
     :param policy_id: The ID of the Keylime policy
     :return: The
     """
@@ -234,12 +248,13 @@ def delete_keylime_policy(policy_id: str) -> bool:
     return True
 
 
-def activate_keylime_policy(policy_id: str) -> bool:
+def activate_keylime_policy(db: Session, policy_id: str) -> bool:
     """
     Activate a different
 
     This automatically deactivates the old active policy.
 
+    :param db: Session to DB
     :param policy_id: the ID of the policy
     :return: False if the policy id could not be found and True if successful
     """
@@ -254,11 +269,11 @@ def activate_keylime_policy(policy_id: str) -> bool:
     return True
 
 
-def deactivate_keylime_policy(policy_id: str) -> bool:
+def deactivate_keylime_policy(db: Session, policy_id: str) -> bool:
     """
     Deactivates a policy.
 
-
+    :param db: Session to DB
     :return: False if policy is not found or not active, otherwise True
     """
     db_policy = db.query(models.KeylimePolicy).filter(models.KeylimePolicy.policy_id == policy_id).first()
@@ -271,10 +286,11 @@ def deactivate_keylime_policy(policy_id: str) -> bool:
     return True
 
 
-def get_active_keylime_policy() -> Optional[bridge.KeylimePolicy]:
+def get_active_keylime_policy(db: Session) -> Optional[bridge.KeylimePolicy]:
     """
     Get current active policy
 
+    :param db: Session to DB
     :return: Active Policy or None if there is no active policy.
     """
     db_active = db.query(models.KeylimePolicy).filter(models.KeylimePolicy.active == lernstick_bridge.utils.Flag.SET).first()

@@ -10,6 +10,7 @@ import json
 from typing import Any, Dict, Optional, Tuple
 
 from pydantic import BaseModel, PrivateAttr, root_validator
+from sqlalchemy.orm import Session
 
 from lernstick_bridge import config
 from lernstick_bridge.bridge_logger import logger
@@ -26,6 +27,7 @@ class AgentBridge(BaseModel):
     """
     strict: bool
     agent_id: str
+    db: Session
     agent: Optional[Agent]
     registrar_data: Optional[AgentRegistrar]
 
@@ -47,7 +49,7 @@ class AgentBridge(BaseModel):
 
         bridge_agent = None
         if is_strict:
-            bridge_agent = crud.get_agent(agent_id)
+            bridge_agent = crud.get_agent(values.get("db"), agent_id)
             assert bridge_agent, "Didn't found agent in database"
         values["registrar_data"] = registrar_data
         values["agent"] = bridge_agent
@@ -136,7 +138,7 @@ class AgentBridge(BaseModel):
         """
         return verifier.delete_agent(self.agent_id)
 
-    def activate(self, timeout: datetime.datetime = None) -> bool:
+    def activate(self, timeout: Optional[datetime.datetime] = None) -> bool:
         """
         Mark the agent as active in the bridge.
 
@@ -146,7 +148,7 @@ class AgentBridge(BaseModel):
         if self._token is None:
             return False
 
-        crud.add_active_agent(self.agent_id, self._token.token, timeout)
+        crud.add_active_agent(self.db, self.agent_id, self._token.token, timeout)
         return True
 
     def _get_tpm_policy(self) -> Dict[str, Any]:
@@ -157,7 +159,7 @@ class AgentBridge(BaseModel):
         """
         output: Dict[str, Any] = {}
         used_pcrs = None
-        keylime_policy = crud.get_active_keylime_policy()
+        keylime_policy = crud.get_active_keylime_policy(self.db)
         use_ima_pcr = keylime_policy is not None and keylime_policy.runtime_policy is not None
         if self.strict:
             assert self.agent
@@ -175,7 +177,7 @@ class AgentBridge(BaseModel):
 
         :return: Keylime configuration
         """
-        keylime_policy = crud.get_active_keylime_policy()
+        keylime_policy = crud.get_active_keylime_policy(self.db)
 
         if keylime_policy is None:
             logger.warning("No keylime policy is specified. Using empty policy!")
@@ -187,3 +189,6 @@ class AgentBridge(BaseModel):
             mb_refstate["crtm"] = self.agent.pcr_0
 
         return mb_refstate, keylime_policy.runtime_policy
+
+    class Config:
+        arbitrary_types_allowed = True

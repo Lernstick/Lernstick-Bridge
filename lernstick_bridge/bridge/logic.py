@@ -7,19 +7,21 @@ import time
 from asyncio import ensure_future
 
 import requests
+from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
 from lernstick_bridge.bridge.agent import AgentBridge
 from lernstick_bridge.bridge_logger import logger
 from lernstick_bridge.config import config
 from lernstick_bridge.db import crud
+from lernstick_bridge.db.database import SessionLocal
 from lernstick_bridge.keylime import registrar, verifier
 from lernstick_bridge.schema.bridge import RevocationMessage
 from lernstick_bridge.schema.keylime import RevocationMsg
 from lernstick_bridge.utils import RetrySession
 
 
-def activate_agent(agent_id: str) -> bool:
+def activate_agent(db: Session, agent_id: str) -> bool:
     """
     Activate an agent.
 
@@ -27,14 +29,14 @@ def activate_agent(agent_id: str) -> bool:
     :return: True if activation was successful
     """
     if config.mode == "strict":
-        return _strict_activate_agent(agent_id)
+        return _strict_activate_agent(db, agent_id)
     if config.mode == "relaxed":
-        return _relaxed_activate_agent(agent_id)
+        return _relaxed_activate_agent(db, agent_id)
     logger.error(f"Unknown mode {config.mode}. Cannot activate agent {agent_id}!")
     return False
 
 
-def deactivate_agent(agent_id: str) -> bool:
+def deactivate_agent(db: Session, agent_id: str) -> bool:
     """
     Deactivate an agent.
 
@@ -42,14 +44,14 @@ def deactivate_agent(agent_id: str) -> bool:
     :return: True if deactivation was successful
     """
     if config.mode == "strict":
-        return _strict_deactivate_agent(agent_id)
+        return _strict_deactivate_agent(db, agent_id)
     if config.mode == "relaxed":
-        return _relaxed_deactivate_agent(agent_id)
+        return _relaxed_deactivate_agent(db, agent_id)
     logger.error(f"Unknown mode {config.mode}. Cannot deactivate agent {agent_id}!")
     return False
 
 
-def _strict_activate_agent(agent_id: str) -> bool:  # pylint: disable=too-many-return-statements
+def _strict_activate_agent(db: Session, agent_id: str) -> bool:  # pylint: disable=too-many-return-statements
     """
     Try to add a agent for Remote Attesation in strict mode.
     Following steps are done:
@@ -64,7 +66,7 @@ def _strict_activate_agent(agent_id: str) -> bool:  # pylint: disable=too-many-r
     :return: True if activation was successful
     """
     try:
-        agent = AgentBridge(agent_id=agent_id, strict=True)
+        agent = AgentBridge(agent_id=agent_id, strict=True, db=db)
 
         if not agent.valid_ek():
             logger.error(f"EK for agent {agent_id} was invalid!")
@@ -100,7 +102,7 @@ def _strict_activate_agent(agent_id: str) -> bool:  # pylint: disable=too-many-r
         return False
 
 
-def _relaxed_activate_agent(agent_id: str) -> bool:
+def _relaxed_activate_agent(db: Session, agent_id: str) -> bool:
     """
     Activates agent in relaxed mode which just removes the timeout from the agent.
 
@@ -108,42 +110,42 @@ def _relaxed_activate_agent(agent_id: str) -> bool:
     :return: True if successful
 
     """
-    if crud.set_timeout_active_agent(agent_id, None):
+    if crud.set_timeout_active_agent(db, agent_id, None):
         logger.info(f"Removed timeout from agent {agent_id}")
         return True
 
     return False
 
 
-def _strict_deactivate_agent(agent_id: str) -> bool:
+def _strict_deactivate_agent(db: Session, agent_id: str) -> bool:
     """
     Deactivate an agent in strict mode.
 
     :param agent_id: the UUID of the agent
     :return: True if successful and False if either the agent is not found or deactivation failed.
     """
-    if not crud.get_active_agent(agent_id):
+    if not crud.get_active_agent(db, agent_id):
         logger.error(f"Agent {agent_id} is not active so it cannot be deactivated!")
         return False  # TODO should be a not found
 
     verifier.delete_agent(agent_id)
-    crud.delete_active_agent(agent_id)
+    crud.delete_active_agent(db, agent_id)
     logger.error(f"Agent {agent_id} was deactivated.")
     return True
 
 
-def _relaxed_deactivate_agent(agent_id: str) -> bool:
+def _relaxed_deactivate_agent(db: Session, agent_id: str) -> bool:
     """
     Deactivate an agent in relaxed mode.
 
     :param agent_id: the UUID of the agent
     :return: True if successful and False if either the agent is not found or deactivation failed.
     """
-    if not crud.get_active_agent(agent_id):
+    if not crud.get_active_agent(db, agent_id):
         return False  # TODO should be a not found
 
     verifier.delete_agent(agent_id)
-    crud.delete_active_agent(agent_id)
+    crud.delete_active_agent(db, agent_id)
     # We will delete also the agent from the registrar. It has to be restarted in order to be added again.
     registrar.delete_agent(agent_id)
     logger.info(f"Deactivated agent: {agent_id}")
@@ -158,7 +160,8 @@ def _relaxed_handle_agents() -> None:
 
     :return: None
     """
-    active_agents = crud.get_active_agents()
+    db = SessionLocal()
+    active_agents = crud.get_active_agents(db)
     active_ids = set()
     for active_agent in active_agents:
         active_ids.add(active_agent.agent_id)
@@ -168,7 +171,7 @@ def _relaxed_handle_agents() -> None:
         if agent_id in active_ids:
             continue
         try:
-            agent = AgentBridge(agent_id=agent_id, strict=False)
+            agent = AgentBridge(agent_id=agent_id, strict=False, db=db)
 
             if not agent.valid_ek() and config.validate_ek_registration:
                 logger.error(f"EK for {agent_id} couldn't be validated!")
@@ -200,8 +203,9 @@ def _relaxed_handle_agents() -> None:
         if datetime.datetime.now() < active_agent.timeout:
             continue
         logger.info(f"Deactivating agent {active_agent.agent_id} due to automatic timeout.")
-        _relaxed_deactivate_agent(active_agent.agent_id)
+        _relaxed_deactivate_agent(db, active_agent.agent_id)
 
+    db.close()
     time.sleep(10)  # TODO make this configurable
 
 

@@ -12,7 +12,7 @@ from lernstick_bridge.bridge import logic
 from lernstick_bridge.bridge_logger import logger
 from lernstick_bridge.config import REGISTRAR_URL, config
 from lernstick_bridge.db import crud
-from lernstick_bridge.db.database import Base, db, engine
+from lernstick_bridge.db.database import Base, SessionLocal, engine
 from lernstick_bridge.routers import agents, keylime
 from lernstick_bridge.utils import RetrySession
 
@@ -64,8 +64,9 @@ def cleanup() -> None:
     logger.info("Starting shutdown actions")
     # Remove all active agents
     logger.info("Remove all currently active agents.")
-    for active_agents in crud.get_active_agents():
-        logic.deactivate_agent(active_agents.agent_id)
+    db = SessionLocal()
+    for active_agents in crud.get_active_agents(db):
+        logic.deactivate_agent(db, active_agents.agent_id)
 
     # Close database connection
     logger.info("Close database connection.")
@@ -85,8 +86,8 @@ async def startup() -> None:
         logger.warning("EK validation is disabled!")
     if not config.revocation_webhook:
         logger.warning("No revocation webhook is specified. Systems will not be notified when a revocation occurs!")
-
-    keylime_policy = crud.get_active_keylime_policy()
+    with SessionLocal() as db:
+        keylime_policy = crud.get_active_keylime_policy(db)
     if keylime_policy is None:
         logger.warning("No Keylime policy is currently active!")
     else:
