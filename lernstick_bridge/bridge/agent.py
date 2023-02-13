@@ -115,14 +115,13 @@ class AgentBridge(BaseModel):
 
         assert self.registrar_data
         # Make sure that the verifier.conf includes the correct module to parse the mb_refstate
-        mb_refstate, ima_policy_bundle, ima_keyring = self._get_keylime_policy()
+        mb_refstate, runtime_policy = self._get_keylime_policy()
         request = AgentVerifierRequest(
             v=base64.b64encode(self._token.to_payload().v).decode("utf-8"),
             cloudagent_ip=self.registrar_data.ip,
             cloudagent_port=self.registrar_data.port,
             tpm_policy=json.dumps(self._get_tpm_policy()),
-            ima_policy_bundle=json.dumps(ima_policy_bundle),
-            ima_sign_verification_keys=json.dumps(ima_keyring),
+            runtime_policy=json.dumps(runtime_policy),
             mb_refstate=json.dumps(mb_refstate),
             ak_tpm=self.registrar_data.aik_tpm,
             mtls_cert=self.registrar_data.mtls_cert,
@@ -169,7 +168,7 @@ class AgentBridge(BaseModel):
         output["mask"] = util.generate_mask(used_pcrs, measured_boot=True, ima=use_ima_pcr)
         return output
 
-    def _get_keylime_policy(self) -> Tuple[Dict[str, Any], Dict[str, Any], Optional[Dict[str, Any]]]:
+    def _get_keylime_policy(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
         Generates IMA and reference boot state for the agent based on the policy currently configured.
         Defaults to an empty policy if no policy is active.
@@ -177,23 +176,14 @@ class AgentBridge(BaseModel):
         :return: Keylime configuration
         """
         keylime_policy = crud.get_active_keylime_policy()
-        mb_refstate: Dict[str, Any] = {}
-        ima_policy_bundle: Dict[str, Any] = {}
-        ima_keyring = None
+
         if keylime_policy is None:
             logger.warning("No keylime policy is specified. Using empty policy!")
-            return mb_refstate, ima_policy_bundle, ima_keyring
+            return {}, {}
 
-        if keylime_policy.mb_refstate:
-            mb_refstate = copy.deepcopy(keylime_policy.mb_refstate)
-            if self.agent:
-                assert self.strict
-                mb_refstate["crtm"] = self.agent.pcr_0
-        if keylime_policy.runtime_policy:
-            ima_policy_bundle["ima_policy"] = keylime_policy.runtime_policy["ima_policy"]
-            ima_policy_bundle["excllist"] = keylime_policy.runtime_policy["excllist"]
-            ima_policy_bundle["checksum"] = ""
-            if keylime_policy.runtime_policy.get("keyring"):
-                ima_keyring = keylime_policy.runtime_policy["keyring"]
+        mb_refstate: Dict[str, Any] = copy.deepcopy(keylime_policy.mb_refstate)
+        if mb_refstate and self.agent:
+            assert self.strict
+            mb_refstate["crtm"] = self.agent.pcr_0
 
-        return mb_refstate, ima_policy_bundle, ima_keyring
+        return mb_refstate, keylime_policy.runtime_policy

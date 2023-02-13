@@ -107,7 +107,7 @@ def merge_dict(from_dict, to_dict):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--key", "-k", action="append", help="Use IMA keys instead of generated hash list. "
-                                                                      "Has better performance. Needs to be PEM encoded.")
+                                                             "Has better performance. Needs to be PEM encoded.")
     parser.add_argument("--exclude", "-e", action='append', help="List of regexes to exclude")
     parser.add_argument("--exclude-initramfs", "-i", action="store_true")
     parser.add_argument("lernstickISO")
@@ -147,26 +147,28 @@ def main():
             print(f"Something failed: {e.with_traceback()}")
             exit(1)
 
-    ima_policy = {
+    runtime_policy = {
         "meta": {
-            "version": 2,
+            "version": 1,
+            "generator": 0,
         },
-        "hashes": hash_list
+        "release": 0,
+        "digests": {},
+        "excludes": [],
+        "keyrings": {},
+        "ima": {"ignored_keyrings": [], "log_hash_alg": "sha1", "dm_policy": None},
+        "ima-buf": {},
+        "verification-keys": "",
     }
-    excllist = ["boot_aggregate"]
+
+    runtime_policy["excludes"].append("boot_aggregate")
     if args.exclude:
-        excllist.extend(args.exclude)
+        runtime_policy["excludes"].extend(args.exclude)
 
-    ima_policy_bundle = {
-        "ima_policy": base64.b64encode(json.dumps(ima_policy).encode()).decode(),
-        "excllist": excllist,
-        "checksum": "",
-    }
     if args.key:
-        # Note that this is not the official Keylime format, but we use it for the Bridge
-        ima_policy_bundle["keyring"] = parse_keys(args.key)
+        runtime_policy["verification-keys"] = parse_keys(args.key)
 
-    print(json.dumps(ima_policy_bundle))
+    print(json.dumps(runtime_policy))
     exit(0)
 
 
