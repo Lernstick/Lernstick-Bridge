@@ -84,7 +84,7 @@ services:
         target: /ca
 
   verifier:
-    image: quay.io/keylime/keylime_verifier:v6.6.0
+    image: quay.io/keylime/keylime_verifier:v6.7.0
     restart: always
     depends_on:
       db-verifier:
@@ -111,7 +111,7 @@ services:
         target: /usr/local/lib/python3.11/site-packages/keylime/elchecking/lernstick_policy.py
 
   registrar:
-    image: quay.io/keylime/keylime_registrar:v6.6.0
+    image: quay.io/keylime/keylime_registrar:v6.7.0
     restart: always
     depends_on:
       db-registrar:

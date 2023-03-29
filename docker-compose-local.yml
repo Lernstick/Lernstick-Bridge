@@ -16,7 +16,7 @@ services:
         target: /cv_ca
 
   verifier:
-    image: quay.io/keylime/keylime_verifier:v6.6.0
+    image: quay.io/keylime/keylime_verifier:v6.7.0
     restart: always
     ports:
       - "8880:8880"
@@ -34,7 +34,7 @@ services:
 
 
   registrar:
-    image: quay.io/keylime/keylime_registrar:v6.6.0
+    image: quay.io/keylime/keylime_registrar:v6.7.0
     ports:
       - "8890:8890"
       - "8891:8891"
