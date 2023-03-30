@@ -3,9 +3,9 @@ SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
 import base64
-from typing import Any, Dict, List
+from typing import Annotated, Any, Dict, List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from lernstick_bridge.bridge import logic
@@ -155,9 +155,9 @@ def deactivate_agent(agent_id: str, db: Session = Depends(get_db)) -> Dict[Any, 
     raise HTTPException(status_code=500, detail="Deactivation was not successful")
 
 
-@router.post("/agents/verify", response_model=bridge.Token, tags=["agent_attestation"],
-             responses={404: {"model": bridge.HTTPError, "description": "Taken does not belong to any agent"}})
-def verify_token(token: str, db: Session = Depends(get_db)) -> bridge.Token:
+@router.put("/agents/verify", response_model=bridge.Token, tags=["agent_attestation"],
+            responses={404: {"model": bridge.HTTPError, "description": "Taken does not belong to any agent"}})
+def verify_token(token: Annotated[str, Body()], db: Session = Depends(get_db)) -> bridge.Token:
     """
     Verify token to check if it belongs to an active agent.
 
