@@ -51,10 +51,12 @@ def create_agent(agent: bridge.AgentCreate, db: Session = Depends(get_db)) -> br
 
 
 @router.delete("/agents/{agent_id}", tags=["agent_management"],
-               responses={404: {"model": bridge.HTTPError, "description": "Agent is not in the database"}})
+               responses={404: {"model": bridge.HTTPError, "description": "Agent is not in the database"},
+                          500: {"model": bridge.HTTPError, "description": "Agent could not be deactivated before deletion"}})
 def delete_agent(agent_id: str, db: Session = Depends(get_db)) -> Dict[Any, Any]:
     """
     Delete a agent from the bridge.
+    If the agent is active it gets deactivated before deletion.
 
     :param agent_id: the agent UUID
     :param db: Session to DB
@@ -63,6 +65,8 @@ def delete_agent(agent_id: str, db: Session = Depends(get_db)) -> Dict[Any, Any]
     db_agent = crud.get_agent(db, agent_id)
     if not db_agent:
         raise HTTPException(status_code=404, detail="Agent is not in the database")
+    if crud.get_active_agent(db, agent_id) and not logic.deactivate_agent(db, agent_id):
+        raise HTTPException(status_code=500, detail="Agent could not be deactivated before deletion")
     if not crud.delete_agent(db, agent_id):
         raise HTTPException(status_code=500, detail="Agent could not be deleted")
     return {}
