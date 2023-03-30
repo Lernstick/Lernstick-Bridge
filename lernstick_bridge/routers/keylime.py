@@ -148,7 +148,7 @@ def delete_keylime_policy(policy_id: str, db: Session = Depends(get_db)) -> Dict
     return {}
 
 
-@router.get("/policy/{policy_id}/activate", tags=["keylime"],
+@router.put("/policy/{policy_id}/activate", tags=["keylime"],
             response_model=Dict[Any, Any],
             responses={404: {"model": bridge.HTTPError, "description": "If policy is not in the database"}})
 def activate_keylime_policy(policy_id: str, db: Session = Depends(get_db)) -> Dict[Any, Any]:
@@ -168,7 +168,7 @@ def activate_keylime_policy(policy_id: str, db: Session = Depends(get_db)) -> Di
     return {}
 
 
-@router.get("/policy/{policy_id}/deactivate",
+@router.put("/policy/{policy_id}/deactivate",
             response_model=Dict[Any, Any],
             responses={404: {"model": bridge.HTTPError, "description": "If policy is not in the database"}})
 def deactivate_keylime_policy(policy_id: str, db: Session = Depends(get_db)) -> Dict[Any, Any]:

@@ -89,7 +89,7 @@ def update_agent(agent_id: str, agent: bridge.Agent, db: Session = Depends(get_d
     return {}
 
 
-@router.post("/agents/{agent_id}/activate", tags=["agent_attestation"],
+@router.put("/agents/{agent_id}/activate", tags=["agent_attestation"],
              responses={400: {"model": bridge.HTTPError, "description": "Agent couldn't be activated"},
                         409: {"model": bridge.HTTPError, "description": "Agent already active"}})
 def activate_agent(agent_id: str, db: Session = Depends(get_db)) -> Dict[Any, Any]:
@@ -137,7 +137,7 @@ def agent_status(agent_id: str, db: Session = Depends(get_db)) -> bridge.AgentSt
     raise HTTPException(status_code=404, detail="Agent not active nor in the database")
 
 
-@router.post("/agents/{agent_id}/deactivate", tags=["agent_attestation"],
+@router.put("/agents/{agent_id}/deactivate", tags=["agent_attestation"],
              responses={404: {"model": bridge.HTTPError, "description": "Agent not found in active database"},
                         500: {"model": bridge.HTTPError, "description": "Deactivation was not successful"}})
 def deactivate_agent(agent_id: str, db: Session = Depends(get_db)) -> Dict[Any, Any]:
