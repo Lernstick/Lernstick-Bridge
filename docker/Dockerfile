@@ -10,9 +10,6 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
     libtss2-esys-3.0.2-0 \
     libtss2-fapi1 \
     libtss2-mu0 \
-    libcurl4-openssl-dev \
-    libssl-dev \
-    libjson-c-dev \
     tpm2-tools
 
 COPY requirements.txt /requirements.txt
@@ -22,7 +19,7 @@ RUN pip3 install -r requirements.txt
 COPY tpm_cert_store /lernstick/tpm_cert_store
 
 RUN --mount=target=/bridge,type=bind,source=.,rw \
-    cd bridge && python3 setup.py install
+    cd bridge && pip install .
 
 EXPOSE 8080
 

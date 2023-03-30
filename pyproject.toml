@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lernstick_bridge"
+version = "0.1-dev"
+authors = [
+    {name = "Thore Sommer", email = "mail@thson.de"},
+]
+description = "Lernstick Keylime Bridge"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "pydantic[dotenv]",
+    "SQLAlchemy",
+    "uvicorn",
+    "cryptography",
+    "requests",
+    "fastapi",
+    "pyOpenSSL",
+    "tpm2-pytss",
+    "PyYAML",
+    "websockets",
+    "PyMySQL"
+]
+
+[project.scripts]
+lernstick_bridge = "lernstick_bridge.cmd:main"
+
+[tool.setuptools.packages.find]
+include = ["lernstick_bridge*"]
