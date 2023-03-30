@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from lernstick_bridge.bridge import logic
 from lernstick_bridge.bridge_logger import logger
-from lernstick_bridge.config import REGISTRAR_URL, config
+from lernstick_bridge.config import REGISTRAR_URL, VERIFIER_URL, config
 from lernstick_bridge.db import crud
 from lernstick_bridge.db.database import Base, SessionLocal, engine
 from lernstick_bridge.routers import agents, keylime
@@ -54,25 +54,6 @@ if config.cors_origins:
     )
 
 
-@app.on_event("shutdown")
-def cleanup() -> None:
-    """
-    Deactive all active agents on shutdown.
-
-    :return: None
-    """
-    logger.info("Starting shutdown actions")
-    # Remove all active agents
-    logger.info("Remove all currently active agents.")
-    db = SessionLocal()
-    for active_agents in crud.get_active_agents(db):
-        logic.deactivate_agent(db, active_agents.agent_id)
-
-    # Close database connection
-    logger.info("Close database connection.")
-    db.close()
-
-
 @app.on_event("startup")
 async def startup() -> None:
     """
@@ -93,17 +74,24 @@ async def startup() -> None:
     else:
         logger.info("Current active Keylime policy is %s", keylime_policy.policy_id)
 
-    if config.mode == "relaxed":
-        # Wait for registrar to come available
-        session = RetrySession(ignore_hostname=True)
-        session.cert = (config.registrar.tls_cert, config.registrar.tls_priv_key)
-        session.verify = config.registrar.ca_cert
-        while True:
-            try:
-                session.get(REGISTRAR_URL)
-                break
-            except requests.exceptions.ConnectionError:
-                time.sleep(1)
+    # Wait for registrar and verifier to come available
+    session = RetrySession(ignore_hostname=True)
+    session.cert = (config.registrar.tls_cert, config.registrar.tls_priv_key)
+    session.verify = config.registrar.ca_cert
+    while True:
+        try:
+            session.get(REGISTRAR_URL)
+            session.get(VERIFIER_URL)
+            break
+        except requests.exceptions.ConnectionError:
+            time.sleep(1)
 
+    logger.info("Remove old active agents.")
+    db = SessionLocal()
+    for active_agents in crud.get_active_agents(db):
+        logic.deactivate_agent(db, active_agents.agent_id)
+    db.close()
+
+    if config.mode == "relaxed":
         logger.info("Starting loop")
         await logic.relaxed_loop()
