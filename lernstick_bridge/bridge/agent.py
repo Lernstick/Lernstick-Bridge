@@ -183,12 +183,19 @@ class AgentBridge(BaseModel):
             logger.warning("No keylime policy is specified. Using empty policy!")
             return {}, {}
 
-        mb_refstate: Dict[str, Any] = copy.deepcopy(keylime_policy.mb_refstate)
-        if mb_refstate and self.agent:
-            assert self.strict
-            mb_refstate["crtm"] = self.agent.pcr_0
+        runtime_policy: Dict[str, Any] = {}
+        mb_refstate: Dict[str, Any] = {}
 
-        return mb_refstate, keylime_policy.runtime_policy
+        if keylime_policy.runtime_policy:
+            runtime_policy = keylime_policy.runtime_policy
+
+        if keylime_policy.mb_refstate:
+            mb_refstate = copy.deepcopy(keylime_policy.mb_refstate)
+            if self.agent:
+                assert self.strict
+                mb_refstate["crtm"] = self.agent.pcr_0
+
+        return mb_refstate, runtime_policy
 
     class Config:  # pylint: disable=missing-class-docstring,too-few-public-methods
         arbitrary_types_allowed = True

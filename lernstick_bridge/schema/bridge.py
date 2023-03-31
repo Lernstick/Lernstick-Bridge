@@ -123,8 +123,8 @@ class KeylimePolicy(BaseModel):
     """
     policy_id: str
     active: bool
-    runtime_policy: Dict[str, Any]
-    mb_refstate: Dict[Any, Any]
+    runtime_policy: Optional[Dict[str, Any]]
+    mb_refstate: Optional[Dict[Any, Any]]
 
     class Config:  # pylint: disable=missing-class-docstring
         orm_mode = True
@@ -137,8 +137,8 @@ class KeylimePolicyAdd(BaseModel):
     It excludes the active option, because all policies are inactive by default.
     """
     policy_id: str
-    runtime_policy: Dict[str, Any]
-    mb_refstate: Dict[Any, Any]
+    runtime_policy: Optional[Dict[str, Any]]
+    mb_refstate: Optional[Dict[Any, Any]]
 
     def to_orm(self) -> DbKeylimePolicy:
         """

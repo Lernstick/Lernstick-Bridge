@@ -114,7 +114,7 @@ def get_keylime_policy(policy_id: str, db: Session = Depends(get_db)) -> bridge.
 
 
 @router.post("/policy", tags=["keylime"],
-             response_model=bridge.KeylimePolicyAdd,
+             response_model=bridge.KeylimePolicy,
              responses={409: {"model": bridge.HTTPError, "description": "Keylime policy is already in the database"}})
 def add_keylime_policy(keylime_policy: bridge.KeylimePolicyAdd, db: Session = Depends(get_db)) -> bridge.KeylimePolicy:
     """
