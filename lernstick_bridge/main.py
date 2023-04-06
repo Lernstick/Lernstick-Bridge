@@ -65,8 +65,6 @@ async def startup() -> None:
     logger.info(f"Started in {config.mode} mode.")
     if not config.validate_ek_registration:
         logger.warning("EK validation is disabled!")
-    if not config.revocation_webhook:
-        logger.warning("No revocation webhook is specified. Systems will not be notified when a revocation occurs!")
     with SessionLocal() as db:
         keylime_policy = crud.get_active_keylime_policy(db)
     if keylime_policy is None:

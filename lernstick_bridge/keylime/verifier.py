@@ -8,7 +8,7 @@ import requests
 
 from lernstick_bridge.bridge_logger import logger
 from lernstick_bridge.config import VERIFIER_URL, config
-from lernstick_bridge.schema.keylime import AgentVerifierRequest, AgentState
+from lernstick_bridge.schema.keylime import AgentState, AgentVerifierRequest
 from lernstick_bridge.utils import RetrySession
 
 session = RetrySession(cert=(config.verifier.tls_cert, config.verifier.tls_priv_key),

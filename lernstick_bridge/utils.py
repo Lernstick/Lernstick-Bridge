@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory
 from typing import Any, List, Optional, Tuple, Union
 
 import requests
-from fastapi import WebSocket
+from redis.asyncio import ConnectionPool, Redis
 from requests import Session
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.poolmanager import PoolManager  # pylint: disable=import-error
@@ -60,43 +60,75 @@ class RetrySession(Session):
             self._tmp_dir.cleanup()
 
 
-class WebsocketConnectionManager:
+def create_redis_pool(host: str, port: int) -> ConnectionPool:
     """
-    Simple websocket connection manager.
+    Creates a new Redis pool and sets the option, so that messages are decoded
+    :param host: Redis host IP
+    :param port: Redis host port
+    :return: New ConnectionPool
     """
-    active_connections: List[WebSocket]
+    return ConnectionPool(
+        host=host,
+        port=port,
+        db=0,
+        decode_responses=True,
+    )
 
-    def __init__(self) -> None:
-        self.active_connections = []
 
-    async def connect(self, websocket: WebSocket) -> None:
+class RedisStream:
+    """
+    Simple stream m -> n implementation using Redis
+    """
+    redis_instance: Redis  # type:ignore[type-arg]
+    stream_key: str
+    max_messages: Optional[int]
+    _last_id: Optional[str]
+
+    def __init__(self, stream_key: str, connection_pool: ConnectionPool, max_messages: Optional[int] = None):
         """
-        Add websocket to list of active connections.
+        Constructs a new RedisStream.
 
-        :param websocket: Websocket that should be connected to
+        :param stream_key: the key where the messages are either added or read
+        :param connection_pool: a Redis connection pool
+        :param max_messages: the maximal amount of messages that should be in the stream. Trim is implemented in the add function.
         """
-        await websocket.accept()
-        self.active_connections.append(websocket)
+        self.redis_instance = Redis(connection_pool=connection_pool)
+        self.stream_key = stream_key
+        self._last_id = None
+        self.max_messages = max_messages
 
-    def disconnect(self, websocket: WebSocket) -> None:
+    async def add(self, data: str) -> None:
         """
-        Remove websocket from list of active connections.
+        Adds data to the stream. Trims stream data if max_messages is not None
+        """
+        # TODO: verify efficiency of calling trim every time
+        if self.max_messages is not None:
+            await self.redis_instance.xtrim(self.stream_key, self.max_messages)
+        await self.redis_instance.xadd(self.stream_key, {"data": data})
 
-        :param websocket: the websocket that should be removed
+    async def get(self, block: Optional[int] = None) -> List[str]:
         """
-        self.active_connections.remove(websocket)
+        Gets the data from the stream. Only messages are considered after the first time that get was called.
 
-    async def broadcast(self, message: str) -> None:
+        :param block: How many ms this function should block. Use 0 to block until next message
+        :return: List of the data from the stream
         """
-        Broadcast message to all connected sockets.
+        last_id = self._last_id if self._last_id else "$"
+        data = await self.redis_instance.xread({self.stream_key: last_id}, block=block)
+        if len(data) == 0:
+            return []
+        new_items = data[0][1]
+        self._last_id = new_items[-1][0]
+        result_list = []
+        for _, item in new_items:
+            result_list.append(item["data"])
+        return result_list
 
-        :param message: the message that should be sent
+    async def close(self) -> None:
         """
-        for connection in self.active_connections:
-            try:
-                await connection.send_text(message)
-            except Exception:  # pylint: disable=broad-exception-caught
-                pass
+        Closes the connection
+        """
+        await self.redis_instance.close()
 
 
 class HostNameIgnoreAdapter(HTTPAdapter):

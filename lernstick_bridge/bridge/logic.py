@@ -6,7 +6,6 @@ import datetime
 import time
 from asyncio import ensure_future
 
-import requests
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
@@ -16,9 +15,6 @@ from lernstick_bridge.config import config
 from lernstick_bridge.db import crud
 from lernstick_bridge.db.database import SessionLocal
 from lernstick_bridge.keylime import registrar, verifier
-from lernstick_bridge.schema.bridge import RevocationMessage
-from lernstick_bridge.schema.keylime import RevocationMsg
-from lernstick_bridge.utils import RetrySession
 
 
 def activate_agent(db: Session, agent_id: str) -> bool:
@@ -216,28 +212,3 @@ async def relaxed_loop() -> None:
             await run_in_threadpool(_relaxed_handle_agents)
 
     ensure_future(loop())
-
-
-def send_revocation(message: RevocationMsg) -> None:
-    """
-    Sends a revocation message to the exam system using a webhook.
-
-    :param message: revocation message from Keylime
-    :return: None
-    """
-    url = config.revocation_webhook
-    # Check if a webhook is specified
-    if not url:
-        return
-    session = RetrySession()
-
-    assert isinstance(message.context, dict)
-    new_msg = RevocationMessage(agent_id=message.agent_id,
-                                event_id=message.event_id,
-                                severity_label=message.severity_label,
-                                context=message.context)
-    logger.info(f"Sending revocation message: {message}")
-    try:
-        session.post(url, json=new_msg.json())
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Couldn't send revocation message \"{new_msg}\" via webhook: {e}")

@@ -11,7 +11,7 @@ from pydantic.utils import GetterDict
 
 from lernstick_bridge.db.models import KeylimePolicy as DbKeylimePolicy
 from lernstick_bridge.keylime import util
-from lernstick_bridge.schema.keylime import AgentState, Payload
+from lernstick_bridge.schema.keylime import AgentState, Payload, RevocationMsg
 from lernstick_bridge.utils import Flag
 
 
@@ -89,12 +89,25 @@ class Token(BaseModel):
 
 class RevocationMessage(BaseModel):
     """
-    Revocation message sent to exam systems via webhook.
+    Revocation message sent to exam systems via SSE.
     """
     agent_id: str
     event_id: Optional[str]
     severity_label: Optional[str]
     context: Optional[Dict[Any, Any]]
+
+    @staticmethod
+    def from_revocation_msg(revocation_msg: RevocationMsg) -> "RevocationMessage":
+        """
+        Convert from Keylime RevocationMsg
+
+        :param revocation_msg: RevocationMsg sent by Keylime
+        :return: RevocationMessage that is sent by the Bridge
+        """
+        return RevocationMessage(agent_id=revocation_msg.agent_id,
+                                 event_id=revocation_msg.event_id,
+                                 severity_label=revocation_msg.severity_label,
+                                 context=revocation_msg.context)
 
 
 class KeylimePolicyGetter(GetterDict):

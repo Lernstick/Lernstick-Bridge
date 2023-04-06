@@ -50,6 +50,14 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
+  redis:
+      image: redis
+      restart: always
+      healthcheck:
+        test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+        interval: 10s
+        timeout: 10s
+        retries: 5
 
   bridge:
     image: campla-dev.adm.ds.fhnw.ch/lernstick-bridge:development
@@ -68,6 +76,7 @@ services:
       registrar: '{"tls_cert": "/ca/${CLIENT_CERT}", "tls_priv_key": "/ca/${CLIENT_KEY}", "ca_cert": "/ca/${TRUSTED_SERVER_CA}" }'
       verifier: '{"tls_cert": "/ca/${CLIENT_CERT}", "tls_priv_key": "/ca/${CLIENT_KEY}", "ca_cert": "/ca/${TRUSTED_SERVER_CA}" }'
       tenant: '{ "agent_mtls_cert": "/ca/${CLIENT_CERT}", "agent_mtls_priv_key": "/ca/${CLIENT_KEY}" }'
+      redis_host: 'redis'
     ports:
       - "${BRIDGE_IP:-127.0.0.1}:${BRIDGE_PORT:-8080}:8080"
     depends_on:
@@ -76,6 +85,8 @@ services:
       verifier:
         condition: service_started
       db-bridge:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
       - type: bind

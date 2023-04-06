@@ -62,8 +62,9 @@ class Config(BaseSettings):
     # Validate EK Cert when a agent is registered. Only disable for debugging or if some devices dont have an EK cert
     validate_ek_registration: bool = True
     db_url: str = "sqlite:///./sql_app.db"
-    revocation_webhook: Optional[str] = None
-    revocation_websocket: bool = False
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_max_revocation_messages: Optional[int] = 5000  # if None never trim messages from redis stream
     retry_attempts: int = 4
     cors_origins: List[str] = []
     tenant: Tenant

@@ -4,5 +4,6 @@ types-requests
 types-ipaddress
 types-cryptography
 types-PyYAML
+types-redis
 sqlalchemy-stubs
 pylint

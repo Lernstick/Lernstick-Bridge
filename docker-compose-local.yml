@@ -1,5 +1,16 @@
 version: "3.9"
 services:
+  redis:
+    image: redis/redis-stack
+    ports:
+      - "127.0.0.1:8001:8001"
+    restart: always
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
   bridge:
     build:
       context: .

@@ -24,8 +24,9 @@ dependencies = [
     "pyOpenSSL",
     "tpm2-pytss",
     "PyYAML",
-    "websockets",
-    "PyMySQL"
+    "PyMySQL",
+    "sse-starlette",
+    "redis"
 ]
 
 [project.scripts]

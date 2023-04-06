@@ -2,73 +2,46 @@
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
 '''
-from typing import Any, Dict, List
+import json
+from typing import Annotated, Any, AsyncGenerator, AsyncIterator, Dict, List
 
-import anyio
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
-from starlette.background import BackgroundTasks
+from sse_starlette.sse import EventSourceResponse
 
-from lernstick_bridge.bridge import logic
 from lernstick_bridge.bridge_logger import logger
 from lernstick_bridge.config import config
 from lernstick_bridge.db import crud
 from lernstick_bridge.db.database import get_db
 from lernstick_bridge.schema import bridge, keylime
-from lernstick_bridge.utils import WebsocketConnectionManager
+from lernstick_bridge.utils import RedisStream, create_redis_pool
 
 router = APIRouter(tags=["keylime"])
-
-
 callback_router = APIRouter()  # This router is only used for documentation purposes
 
 
-@callback_router.post("{$revocation_webhook}", description="Sends revocation message to exam system")
-def send_revocation_message(_: bridge.RevocationMessage) -> None:  # pylint: disable=missing-function-docstring
-    pass
+_redis_pool = create_redis_pool(config.redis_host, config.redis_port)
 
 
-_manager = WebsocketConnectionManager()
-
-
-def _get_manager() -> WebsocketConnectionManager:
-    return _manager
-
-
-if config.revocation_websocket:
-    @router.websocket("/ws")
-    async def websocket_endpoint(
-            websocket: WebSocket,
-            manager: WebsocketConnectionManager = Depends(_get_manager)
-            ) -> None:
-        """
-        Websocket entrypoint for revocation messaged.
-        WARNING: This only works if the bridge runs single threaded. Use for test purposes only!
-
-        :param websocket: the websocket that tries to connect.
-        :param manager: websocket connection manager.
-        """
-        await manager.connect(websocket)
-        try:
-            while True:
-                await anyio.sleep(10)
-        except WebSocketDisconnect:
-            manager.disconnect(websocket)
+async def _get_stream() -> AsyncGenerator[RedisStream, None]:
+    stream = RedisStream("keylime", connection_pool=_redis_pool, max_messages=config.redis_max_revocation_messages)
+    try:
+        yield stream
+    finally:
+        await stream.close()
 
 
 @router.post("/revocation", callbacks=callback_router.routes)
-async def revocation(
+async def post_revocation(
         message: keylime.RevocationResp,
-        background_task: BackgroundTasks,
-        manager: WebsocketConnectionManager = Depends(_get_manager),
+        stream: Annotated[RedisStream, Depends(_get_stream)],
         db: Session = Depends(get_db)
 ) -> bool:
     """
     Webhook entry point for Keylime to call for revocation messages.
 
     :param message: revocation message from Keylime
-    :param background_task: Background task that is used to send the message to the exam system.
-    :param manager: websocket connection manager.
+    :param stream: stream for SSE handling of revocation messages
     :param db: Session to DB
     :return: True if we sent the message.
     """
@@ -79,10 +52,36 @@ async def revocation(
         return False
     logger.info(f"Received revocation message from Keylime: {message.json()}")
 
-    if config.revocation_websocket:
-        await manager.broadcast(message.json())
-    background_task.add_task(logic.send_revocation, message.msg)
+    bridge_message = bridge.RevocationMessage.from_revocation_msg(message.msg)
+    await stream.add(json.dumps(bridge_message.json()))
     return True
+
+
+async def get_revocations(request: Request, stream: RedisStream) -> AsyncIterator[Dict[Any, Any]]:
+    """
+    Iterator that get the revocation messages from the stream until the request is closed.
+
+    :param request: The SSE request that is used.
+    :param stream: The stream to get the messages from
+    """
+    while True:
+        data = await stream.get(block=1000)
+        if await request.is_disconnected():
+            break
+        for item in data:
+            yield json.loads(item)
+
+
+@router.get("/revocation", tags=["keylime"])
+async def get_revocation(request: Request, stream: Annotated[RedisStream, Depends(_get_stream)]) -> EventSourceResponse:
+    """
+    SSE endpoint for revocation messages
+
+    :param request: the HTTP request. Used by the iterator to check if the session was disconnected
+    :param stream: stream for the revocation data
+    """
+    generator = get_revocations(request, stream)
+    return EventSourceResponse(generator)
 
 
 # Routes for Keylime policy management
