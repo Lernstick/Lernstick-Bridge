@@ -161,13 +161,16 @@ class AgentBridge(BaseModel):
         used_pcrs = None
         keylime_policy = crud.get_active_keylime_policy(self.db)
         use_ima_pcr = keylime_policy is not None and keylime_policy.runtime_policy is not None
-        if self.strict:
+        use_measured_boot = keylime_policy is not None and keylime_policy.mb_refstate is not None
+
+        # Add static PCR 0 check only when no mb_refstate is available
+        if self.strict and (keylime_policy is None or keylime_policy.mb_refstate is None):
             assert self.agent
-            # Note: Keylime only uses the static policy if no measured boot policy is specified for those PCRs
-            output["0"] = self.agent.pcr_0  # Firmware PCR
+            # Note: Keylime checks the static PCR0 also when a measured boot policy is active
+            output["0"] = [self.agent.pcr_0[2:]]  # Firmware PCR0 value with stripped "0x" prefix
             used_pcrs = [0]
 
-        output["mask"] = util.generate_mask(used_pcrs, measured_boot=True, ima=use_ima_pcr)
+        output["mask"] = util.generate_mask(used_pcrs, measured_boot=use_measured_boot, ima=use_ima_pcr)
         return output
 
     def _get_keylime_policy(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
