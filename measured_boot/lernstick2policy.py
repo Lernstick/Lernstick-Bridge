@@ -36,8 +36,8 @@ def unmount(mount_dir):
 def extract_grub_files(mount_dir):
     output = {}
     for file in glob.glob(f"{mount_dir}/boot/grub/**/*", recursive=True):
-        # We exclude all modules because they are never loaded if SecureBoot is enabled
-        if os.path.isdir(file) or file.endswith(".mod"):
+        # We still include .mod files because even when they fail to load, they are still measured
+        if os.path.isdir(file):
             continue
         name = os.path.relpath(file, mount_dir)
         with open(file, 'rb') as f:
