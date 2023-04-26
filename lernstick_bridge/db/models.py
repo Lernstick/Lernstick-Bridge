@@ -7,6 +7,7 @@ import json
 from typing import Any
 
 from sqlalchemy import Column, DateTime, Enum, String, Text
+from sqlalchemy.dialects import mysql
 from sqlalchemy.types import TypeDecorator
 
 from lernstick_bridge.db.database import Base
@@ -44,14 +45,13 @@ class ActiveAgent(Base):
     token = Column(String(100), unique=True, index=True)  # Tokens are assumed to be be unique so we enforce that in the database
     timeout = Column(DateTime, nullable=True)  # If timeout is NULL it means that the agent is always valid.
 
-
 class JSONEncodedDict(TypeDecorator[Any]):  # pylint: disable=abstract-method,too-many-ancestors
     """
     Represents an immutable structure as a json-encoded string.
     Based on the example in the sqlalchemy docs.
     """
 
-    impl = Text
+    impl = Text().with_variant(mysql.JSON, 'mysql', 'mariadb')
 
     def process_bind_param(self, value: Any, dialect: Any) -> None:
         if value is not None:
