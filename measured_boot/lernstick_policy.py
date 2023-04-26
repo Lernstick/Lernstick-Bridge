@@ -20,8 +20,9 @@ class LernstickPolicy(policies.Policy):
                r"es_AR\.UTF-8", r"es_ES\.UTF-8", r"pt_BR\.UTF-8", r"sq_AL\.UTF-8", r"ku_TR\.UTF-8", r"ru_RU\.UTF-8",
                r"fa_IR"]
     # Supported keyboard layout configurations
-    keyboard_layouts = [r"ch,ch\(fr\),de,fr", r"ch\(fr\),ch,fr,de", r"de,ch,ch\(fr\),fr", r"it,ch,ch(fr),fr",
-                        r"us,ch,ch\(fr\),de", r"es,us,ch,ch\(fr\)", r"br,pt,us,ch", r"ru,ch,de,us", r"al,us,ch,de"]
+    keyboard_layouts = [r"ch\(de_nodeadkeys\),ch,ch\(fr\),de", r"ch,ch\(fr\),de,fr", r"ch\(fr\),ch,fr,de", r"de,ch,ch\(fr\),fr",
+                        r"it,ch,ch(fr),fr", r"us,ch,ch\(fr\),de", r"es,us,ch,ch\(fr\)", r"br,pt,us,ch", r"ru,ch,de,us",
+                        r"al,us,ch,de"]
     # Supported desktops (only text or GNOME are used in the exam environment)
     desktops = ["gnome nottyautologin", "no"]
     # default live-boot configuration
