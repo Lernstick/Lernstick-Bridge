@@ -59,6 +59,7 @@ class LernstickPolicy(policies.Policy):
         dispatcher.set((0, 'EV_S_CRTM_VERSION'), tests.AcceptAll())
         dispatcher.set((0, 'EV_S_CRTM_CONTENTS'), tests.AcceptAll())
         dispatcher.set((0, 'EV_EFI_PLATFORM_FIRMWARE_BLOB'), tests.AcceptAll())
+        dispatcher.set((0, 'EV_POST_CODE'), tests.AcceptAll())
 
         # Check if SecureBoot is enabled
         dispatcher.set((7, 'EV_EFI_VARIABLE_DRIVER_CONFIG'), vd)
