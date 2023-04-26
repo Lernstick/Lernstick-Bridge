@@ -57,6 +57,7 @@ class LernstickPolicy(policies.Policy):
         # Firmware specific numbers and binaries. We currently accept all,
         # but in the future can extract this information from the submitted event log.
         dispatcher.set((0, 'EV_S_CRTM_VERSION'), tests.AcceptAll())
+        dispatcher.set((0, 'EV_S_CRTM_CONTENTS'), tests.AcceptAll())
         dispatcher.set((0, 'EV_EFI_PLATFORM_FIRMWARE_BLOB'), tests.AcceptAll())
 
         # Check if SecureBoot is enabled
