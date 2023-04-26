@@ -108,7 +108,13 @@ def main():
             print(f"Something failed: {e.with_traceback()}")
             exit(1)
 
-    print(json.dumps(policy))
+    # Generate policy format for the bridge, with an empty IMA runtime policy
+    bridge_policy = {
+        "runtime_policy": None,
+        "mb_refstate": policy
+    }
+
+    print(json.dumps(bridge_policy))
     exit(0)
 
 
