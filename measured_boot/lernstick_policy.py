@@ -85,17 +85,37 @@ class LernstickPolicy(policies.Policy):
             ),
         )
 
-        # Test for validating the applications that are loaded in UEFI
-        tt = [tests.DigestTest(refstate["boot"]["bootx64.efi"]),
-              tests.DigestTest(refstate["boot"]["grubx64.efi"]),
-              tests.DigestTest(refstate["boot"]["vmlinuz"])]
-        # Some Grub versions load the vmlinuz image twice
-        tt2 = [tests.DigestTest(refstate["boot"]["bootx64.efi"]),
-              tests.DigestTest(refstate["boot"]["grubx64.efi"]),
-              tests.DigestTest(refstate["boot"]["vmlinuz"]),
-              tests.DigestTest(refstate["boot"]["vmlinuz"])]
+        # Some Firmware does implement the UEFI boot menu and other system components as UEFI applications.
+        # Those are measured in the boot chain, currently we don't have reference values for that,
+        # so we just ignore them for now.
+        def generate_application_test(firmware_calls: int) -> tests.Test:
+            tt_firmware = []
+            tt2_firmware = []
+            for _ in range(firmware_calls):
+                tt_firmware.append(
+                    tests.FieldTest('Event',
+                                    tests.FieldTest('DevicePath',
+                                                    tests.RegExp(r'FvVol\(\w{8}-\w{4}-\w{4}-\w{4}-\w{12}\)/FvFile\(\w{8}-\w{4}-\w{4}-\w{4}-\w{12}\)',
+                                                                 re.DOTALL))))
+                tt2_firmware.append(
+                    tests.FieldTest('Event',
+                                    tests.FieldTest('DevicePath',
+                                                    tests.RegExp(r'FvVol\(\w{8}-\w{4}-\w{4}-\w{4}-\w{12}\)/FvFile\(\w{8}-\w{4}-\w{4}-\w{4}-\w{12}\)',
+                                                                 re.DOTALL))))
 
-        bsa_test = tests.Or(tests.TupleTest(*tt), tests.TupleTest(*tt2))
+            # Test for validating the applications that are loaded in UEFI
+            tt = tt_firmware + [tests.DigestTest(refstate["boot"]["bootx64.efi"]),
+                  tests.DigestTest(refstate["boot"]["grubx64.efi"]),
+                  tests.DigestTest(refstate["boot"]["vmlinuz"])]
+            # Some Grub versions load the vmlinuz image twice
+            tt2 = tt2_firmware +[tests.DigestTest(refstate["boot"]["bootx64.efi"]),
+                  tests.DigestTest(refstate["boot"]["grubx64.efi"]),
+                  tests.DigestTest(refstate["boot"]["vmlinuz"]),
+                  tests.DigestTest(refstate["boot"]["vmlinuz"])]
+
+            return tests.Or(tests.TupleTest(*tt), tests.TupleTest(*tt2))
+
+        bsa_test = tests.Or(*[generate_application_test(x) for x in range(0,12)])
 
         events_final = tests.DelayToFields(
             tests.FieldsTest(
