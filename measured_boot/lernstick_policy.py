@@ -115,7 +115,7 @@ class LernstickPolicy(policies.Policy):
 
             return tests.Or(tests.TupleTest(*tt), tests.TupleTest(*tt2))
 
-        bsa_test = tests.Or(*[generate_application_test(x) for x in range(0,12)])
+        bsa_test = tests.Or(*[generate_application_test(x) for x in range(0,20)])
 
         events_final = tests.DelayToFields(
             tests.FieldsTest(
