@@ -24,7 +24,7 @@ Depending on Bridge usage the following values might need some change:
 * revocation_webhook: Uncomment and set to the entrypoint where your system wants to receive revocation events.
 
 ## Starting the Bridge and Keylime
-Just run `docker compose -f docker-compose-local.yml up`.
+Just run `docker compose --env-file .env.example -f docker-compose-local.yml up --force-recreate --build`.
 
 ## Preparing the device
  * Ensure that the device has a TPM2.0

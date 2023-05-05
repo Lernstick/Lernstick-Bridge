@@ -34,8 +34,6 @@ See [TEST_SETUP.md](TEST_SETUP.md) for more details.
 Configuration is done using pydantic settings. The setting schema is specified in `lernstick_bridge/schema/config.py`. 
 More information can be found here: https://pydantic-docs.helpmanual.io/usage/settings/
 
-`.docker_env` provides a default configuration that works out of the box in 
-
 ## API documentation
 FastAPI automatically generates a Swagger documentation. 
 It can be found when the Bridge is running under `IP:PORT/docs`.  

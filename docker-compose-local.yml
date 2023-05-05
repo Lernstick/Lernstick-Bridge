@@ -1,59 +1,145 @@
+# More complex bridge deployment with MariaDB persistent databases
+# See .env.example for configuration options
 version: "3.9"
 services:
-  redis:
-    image: redis/redis-stack
-    ports:
-      - "127.0.0.1:8001:8001"
+  db-bridge:
+    image: mariadb
     restart: always
+    environment:
+      MARIADB_RANDOM_ROOT_PASSWORD: 1
+      MARIADB_MYSQL_LOCALHOST_USER: 1
+      MYSQL_DATABASE: 'bridge'
+      MYSQL_USER: 'bridge'
+      MYSQL_PASSWORD: ${DB_BRIDGE_PASS}
     healthcheck:
-      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      test: [ "CMD", "healthcheck.sh", "--su=mysql", "--connect", "--innodb_initialized" ]
       interval: 10s
       timeout: 10s
       retries: 5
+  db-verifier:
+    image: mariadb
+    restart: always
+    environment:
+      MARIADB_RANDOM_ROOT_PASSWORD: 1
+      MARIADB_MYSQL_LOCALHOST_USER: 1
+      MYSQL_DATABASE: 'verifier'
+      MYSQL_USER: 'keylime'
+      MYSQL_PASSWORD: ${DB_VERIFIER_PASS}
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--su=mysql", "--connect", "--innodb_initialized" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+  db-registrar:
+    image: mariadb
+    restart: always
+    environment:
+      MARIADB_RANDOM_ROOT_PASSWORD: 1
+      MARIADB_MYSQL_LOCALHOST_USER: 1
+      MYSQL_DATABASE: 'registrar'
+      MYSQL_USER: 'keylime'
+      MYSQL_PASSWORD: "${DB_REGISTRAR_PASS}"
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--su=mysql", "--connect", "--innodb_initialized" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+  redis:
+      image: redis
+      restart: always
+      healthcheck:
+        test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+        interval: 10s
+        timeout: 10s
+        retries: 5
 
   bridge:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    env_file: .docker_env
+    environment:
+      ip: "0.0.0.0"
+      port: "8080"
+      log_level: "debug"
+      mode: "${BRIDGE_MODE:-strict}"
+      validate_ek_registration: "true"
+      revocation_webhook: "${BRIDGE_REVOCATION_WEBHOOK}:-"
+      # Use default cert store shipped by the container
+      tpm_cert_store: "/lernstick/tpm_cert_store"
+      db_url: "mysql+pymysql://bridge:${DB_BRIDGE_PASS}@db-bridge:3306/bridge?charset=utf8"
+      keylime_registrar: "https://registrar:8891"
+      keylime_verifier: "https://verifier:8881"
+      measured_boot_policy: "/mb_policy.json"
+      registrar: '{"tls_cert": "/ca/${CLIENT_CERT}", "tls_priv_key": "/ca/${CLIENT_KEY}", "ca_cert": "/ca/${TRUSTED_SERVER_CA}" }'
+      verifier: '{"tls_cert": "/ca/${CLIENT_CERT}", "tls_priv_key": "/ca/${CLIENT_KEY}", "ca_cert": "/ca/${TRUSTED_SERVER_CA}" }'
+      tenant: '{ "agent_mtls_cert": "/ca/${CLIENT_CERT}", "agent_mtls_priv_key": "/ca/${CLIENT_KEY}" }'
+      redis_host: 'redis'
     ports:
-      - "8080:8080"
+      - "${BRIDGE_IP:-127.0.0.1}:${BRIDGE_PORT:-8080}:8080"
     depends_on:
-      - registrar
-      - verifier
+      registrar:
+        condition: service_started
+      verifier:
+        condition: service_started
+      db-bridge:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - type: bind
-        source: ./cv_ca
-        target: /cv_ca
+        source: "${TLS_DIR}"
+        read_only: true
+        target: /ca
 
   verifier:
     image: quay.io/keylime/keylime_verifier:v6.7.0
     restart: always
-    ports:
-      - "8880:8880"
-      - "8881:8881"
+    depends_on:
+      db-verifier:
+        condition: service_healthy
+    environment:
+      KEYLIME_VERIFIER_TLS_DIR: "/ca"
+      KEYLIME_VERIFIER_SERVER_KEY: "${SERVER_KEY}"
+      KEYLIME_VERIFIER_SERVER_CERT: "${SERVER_CERT}"
+      KEYLIME_VERIFIER_TRUSTED_CLIENT_CA: "['${TRUSTED_CLIENT_CA}']"
+      KEYLIME_VERIFIER_CLIENT_KEY: "${CLIENT_KEY}"
+      KEYLIME_VERIFIER_CLIENT_CERT: "${CLIENT_CERT}"
+      KEYLIME_VERIFIER_TRUSTED_SERVER_CA: "['${TRUSTED_SERVER_CA}']"
+      KEYLIME_VERIFIER_DATABASE_URL: "mysql+pymysql://keylime:${DB_VERIFIER_PASS}@db-verifier:3306/verifier?charset=utf8"
     volumes:
       - type: bind
         source: ./keylime.conf.d
         target: /etc/keylime
       - type: bind
-        source: ./cv_ca
-        target: /var/lib/keylime/cv_ca
+        source: "${TLS_DIR}"
+        read_only: true
+        target: /ca
       - type: bind
         source: ./measured_boot/lernstick_policy.py
         target: /usr/local/lib/python3.11/site-packages/keylime/elchecking/lernstick_policy.py
 
-
   registrar:
     image: quay.io/keylime/keylime_registrar:v6.7.0
+    restart: always
+    depends_on:
+      db-registrar:
+        condition: service_healthy
+    environment:
+      KEYLIME_REGISTRAR_TLS_DIR: "/ca"
+      KEYLIME_REGISTRAR_SERVER_KEY: "${SERVER_KEY}"
+      KEYLIME_REGISTRAR_SERVER_CERT: "${SERVER_CERT}"
+      KEYLIME_REGISTRAR_TRUSTED_CLIENT_CA: "['${TRUSTED_CLIENT_CA}']"
+      KEYLIME_REGISTRAR_CLIENT_KEY: "${CLIENT_KEY}"
+      KEYLIME_REGISTRAR_CLIENT_CERT: "${CLIENT_CERT}"
+      KEYLIME_REGISTRAR_TRUSTED_SERVER_CA: "['${TRUSTED_SERVER_CA}']"
+      KEYLIME_REGISTRAR_DATABASE_URL: "mysql+pymysql://keylime:${DB_REGISTRAR_PASS}@db-registrar:3306/registrar?charset=utf8"
     ports:
       - "8890:8890"
-      - "8891:8891"
     volumes:
       - type: bind
         source: ./keylime.conf.d
         target: /etc/keylime
       - type: bind
-        source: ./cv_ca
+        source: "${TLS_DIR}"
         read_only: true
-        target: /var/lib/keylime/cv_ca
+        target: /ca
