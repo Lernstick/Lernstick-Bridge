@@ -33,7 +33,7 @@ class Agent(Base):
     pcr_6 = Column(String(100), nullable=True)
     pcr_7 = Column(String(100), nullable=True)
     # Reference of the boot event log. Used for improving the measured boot policies
-    event_log_reference = Column(Text(), nullable=True)
+    event_log_reference = Column(Text().with_variant(mysql.LONGTEXT, 'mysql', 'mariadb'), nullable=True)
 
 
 class ActiveAgent(Base):
