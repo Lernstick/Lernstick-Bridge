@@ -1,7 +1,7 @@
-'''
+"""
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
-'''
+"""
 
 import uvicorn
 
@@ -14,7 +14,12 @@ def main() -> None:
 
     :return: None
     """
-    uvicorn.run("lernstick_bridge.main:app", host=str(config.ip), port=config.port, log_level=config.log_level)
+    uvicorn.run(
+        "lernstick_bridge.main:app",
+        host=str(config.ip),
+        port=config.port,
+        log_level=config.log_level,
+    )
 
 
 if __name__ == "__main__":

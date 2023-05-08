@@ -1,7 +1,7 @@
-'''
+"""
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
-'''
+"""
 
 from typing import Iterator
 
@@ -17,11 +17,7 @@ _connect_args = {}
 if config.db_url.startswith("sqlite://"):
     _connect_args["check_same_thread"] = False
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    pool_pre_ping=True,
-    connect_args=_connect_args
-)
+engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True, connect_args=_connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

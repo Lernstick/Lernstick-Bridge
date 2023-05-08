@@ -1,7 +1,7 @@
-'''
+"""
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
-'''
+"""
 # pylint: disable=too-few-public-methods
 import json
 from typing import Any
@@ -18,6 +18,7 @@ class Agent(Base):
     """
     Database model for the agents table in strict mode.
     """
+
     __tablename__ = "agents"
 
     agent_id = Column(String(100), primary_key=True, index=True)  # Is in our case the ek_cert hashed
@@ -33,17 +34,21 @@ class Agent(Base):
     pcr_6 = Column(String(100), nullable=True)
     pcr_7 = Column(String(100), nullable=True)
     # Reference of the boot event log. Used for improving the measured boot policies
-    event_log_reference = Column(Text().with_variant(mysql.LONGTEXT, 'mysql', 'mariadb'), nullable=True)
+    event_log_reference = Column(Text().with_variant(mysql.LONGTEXT, "mysql", "mariadb"), nullable=True)
 
 
 class ActiveAgent(Base):
     """
     Database model for the active agent table.
     """
+
     __tablename__ = "active_agents"
     agent_id = Column(String(100), primary_key=True, index=True)
-    token = Column(String(100), unique=True, index=True)  # Tokens are assumed to be be unique so we enforce that in the database
+    token = Column(
+        String(100), unique=True, index=True
+    )  # Tokens are assumed to be be unique so we enforce that in the database
     timeout = Column(DateTime, nullable=True)  # If timeout is NULL it means that the agent is always valid.
+
 
 class JSONEncodedDict(TypeDecorator[Any]):  # pylint: disable=abstract-method,too-many-ancestors
     """
@@ -51,7 +56,7 @@ class JSONEncodedDict(TypeDecorator[Any]):  # pylint: disable=abstract-method,to
     Based on the example in the sqlalchemy docs.
     """
 
-    impl = Text().with_variant(mysql.JSON, 'mysql', 'mariadb')
+    impl = Text().with_variant(mysql.JSON, "mysql", "mariadb")
 
     def process_bind_param(self, value: Any, dialect: Any) -> None:
         if value is not None:
@@ -69,6 +74,7 @@ class KeylimePolicy(Base):
     """
     Database model for the Keylime policies.
     """
+
     __tablename__ = "keylime_policies"
     policy_id = Column(String(100), primary_key=True, index=True)
     runtime_policy = Column(JSONEncodedDict(), nullable=True)

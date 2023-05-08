@@ -1,8 +1,8 @@
-'''
+"""
 SPDX-License-Identifier: Apache-2.0
 Copyright 2017 Massachusetts Institute of Technology.
 Copyright 2021 Thore Sommer
-'''
+"""
 import base64
 import subprocess
 from tempfile import NamedTemporaryFile
@@ -34,8 +34,11 @@ def do_quote(agent_url: str, ak: str, mtls_cert: str) -> Tuple[bool, Optional[st
     nonce = util.get_random_nonce()
 
     try:
-        with RetrySession(verify_cert=mtls_cert, cert=(config.tenant.agent_mtls_cert, config.tenant.agent_mtls_priv_key),
-                          ignore_hostname=True) as session:
+        with RetrySession(
+            verify_cert=mtls_cert,
+            cert=(config.tenant.agent_mtls_cert, config.tenant.agent_mtls_priv_key),
+            ignore_hostname=True,
+        ) as session:
             ret = session.get(f"{agent_url}/quotes/identity?nonce={nonce}")
     except requests.exceptions.RequestException as e:
         logger.error(f"Getting the quote from the agent {agent_url} failed: {e}")
@@ -71,15 +74,19 @@ def do_quote(agent_url: str, ak: str, mtls_cert: str) -> Tuple[bool, Optional[st
     computed = util.data_extend(pubkey.encode("utf-8"), hash_alg)
     # tpm2-tools hash no leading zeros while hashlib has some we remove them from both
     if computed is None or data_pcr_hash is None or computed.lstrip("0") != data_pcr_hash.lstrip("0"):
-        logger.error(f"data_pcr does not match hash.\n"
-                     f"Got\t: {data_pcr_hash}\n"
-                     f"Expected\t: {computed}")
+        logger.error(f"data_pcr does not match hash.\n" f"Got\t: {data_pcr_hash}\n" f"Expected\t: {computed}")
         return False, None
     return quote_valid, pubkey
 
 
-def _check_qoute(ak: bytes, quote_data: bytes, signature_data: bytes, pcr_data: bytes, nonce: str, hash_alg: str) \
-        -> Tuple[bool, Optional[str]]:  # pylint: disable=too-many-arguments
+def _check_qoute(
+    ak: bytes,
+    quote_data: bytes,
+    signature_data: bytes,
+    pcr_data: bytes,
+    nonce: str,
+    hash_alg: str,
+) -> Tuple[bool, Optional[str]]:  # pylint: disable=too-many-arguments
     """
     Validates a quote using tpm2_checkquote.
 
@@ -92,10 +99,15 @@ def _check_qoute(ak: bytes, quote_data: bytes, signature_data: bytes, pcr_data: 
     :return: True if valid
     """
     nonce = nonce.encode("utf-8").hex()
-    with NamedTemporaryFile(prefix="lernstick-", ) as quote_file, \
-            NamedTemporaryFile(prefix="lernstick-", ) as sig_file, \
-            NamedTemporaryFile(prefix="lernstick-", ) as pcr_file, \
-            NamedTemporaryFile(prefix="lernstick-", ) as ak_file:
+    with NamedTemporaryFile(
+        prefix="lernstick-",
+    ) as quote_file, NamedTemporaryFile(
+        prefix="lernstick-",
+    ) as sig_file, NamedTemporaryFile(
+        prefix="lernstick-",
+    ) as pcr_file, NamedTemporaryFile(
+        prefix="lernstick-",
+    ) as ak_file:
         quote_file.write(quote_data)
         sig_file.write(signature_data)
         pcr_file.write(pcr_data)
@@ -107,13 +119,23 @@ def _check_qoute(ak: bytes, quote_data: bytes, signature_data: bytes, pcr_data: 
         ak_file.seek(0)
 
         ret = subprocess.run(  # pylint: disable=subprocess-run-check
-            ["tpm2_checkquote",
-             "-u", ak_file.name,
-             "-m", quote_file.name,
-             "-s", sig_file.name,
-             "-f", pcr_file.name,
-             "-g", hash_alg,
-             "-q", nonce], capture_output=True)
+            [
+                "tpm2_checkquote",
+                "-u",
+                ak_file.name,
+                "-m",
+                quote_file.name,
+                "-s",
+                sig_file.name,
+                "-f",
+                pcr_file.name,
+                "-g",
+                hash_alg,
+                "-q",
+                nonce,
+            ],
+            capture_output=True,
+        )
         if ret.returncode != 0:
             logger.error(f"tpm2_checkquote failed with: {ret.stderr.decode('utf-8')}")
             return False, None
@@ -170,13 +192,17 @@ def post_payload_u(agent_id: str, agent_url: str, payload: Payload, mtls_cert: s
     if key is None:
         logger.error(f"Transport key not provided not posting payload for agent: {agent_id}")
         return False
-    data = {"auth_tag": auth_tag,
-            "encrypted_key": base64.b64encode(util.rsa_encrypt(key, payload.u)).decode("utf-8"),
-            "payload": payload.encrypted_data}
+    data = {
+        "auth_tag": auth_tag,
+        "encrypted_key": base64.b64encode(util.rsa_encrypt(key, payload.u)).decode("utf-8"),
+        "payload": payload.encrypted_data,
+    }
     try:
-        with RetrySession(verify_cert=mtls_cert,
-                          cert=(config.tenant.agent_mtls_cert, config.tenant.agent_mtls_priv_key),
-                          ignore_hostname=True) as session:
+        with RetrySession(
+            verify_cert=mtls_cert,
+            cert=(config.tenant.agent_mtls_cert, config.tenant.agent_mtls_priv_key),
+            ignore_hostname=True,
+        ) as session:
             res = session.post(f"{agent_url}/keys/ukey", json=data)
     except requests.exceptions.RequestException as e:
         logger.error(f"Could post payload to agent {agent_id}: {e}")

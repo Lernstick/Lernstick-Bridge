@@ -1,7 +1,7 @@
-'''
+"""
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
-'''
+"""
 import datetime
 from typing import List, Optional
 
@@ -106,11 +106,7 @@ def add_active_agent(db: Session, agent_id: str, token: str, timeout: Optional[d
     if get_active_agent(db, agent_id):
         return False
 
-    active_agent = models.ActiveAgent(
-        agent_id=agent_id,
-        token=token,
-        timeout=timeout
-    )
+    active_agent = models.ActiveAgent(agent_id=agent_id, token=token, timeout=timeout)
     db.add(active_agent)
     db.commit()
     return True

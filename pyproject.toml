@@ -34,3 +34,12 @@ lernstick_bridge = "lernstick_bridge.cmd:main"
 
 [tool.setuptools.packages.find]
 include = ["lernstick_bridge*"]
+
+
+[tool.black]
+line-length = 120
+target-version = ['py310']
+
+[tool.isort]
+profile = "black"
+line_length = 120

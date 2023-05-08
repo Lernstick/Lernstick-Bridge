@@ -1,7 +1,7 @@
-'''
+"""
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
-'''
+"""
 import datetime
 import time
 from asyncio import ensure_future
@@ -207,6 +207,7 @@ def _relaxed_handle_agents() -> None:
 
 async def relaxed_loop() -> None:
     """Initial PoC for an loop that automatically adds and removes agents"""
+
     async def loop() -> None:
         while True:
             await run_in_threadpool(_relaxed_handle_agents)

@@ -1,7 +1,7 @@
-'''
+"""
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
-'''
+"""
 import time
 
 import requests
@@ -21,16 +21,16 @@ Base.metadata.create_all(bind=engine)
 tags_metadata = [
     {
         "name": "agent_attestation",
-        "description": "Add and remove agents from Remote Attestation and verify their identity."
+        "description": "Add and remove agents from Remote Attestation and verify their identity.",
     },
     {
         "name": "agent_management",
-        "description": "Store and manage agents specific information for Remote Attestation. Only used in strict mode."
+        "description": "Store and manage agents specific information for Remote Attestation. Only used in strict mode.",
     },
     {
         "name": "keylime",
         "description": "API entrypoint that is called by Keylime. "
-                       "See '/revocation' callbacks for message format that is send to the exam system."
+        "See '/revocation' callbacks for message format that is send to the exam system.",
     },
 ]
 
@@ -38,7 +38,7 @@ app = FastAPI(
     title="Lernstick Bridge",
     version="0.0.1",
     description="Simplify interactions with Keylime for Remote Attestation",
-    openapi_tags=tags_metadata
+    openapi_tags=tags_metadata,
 )
 
 app.include_router(agents.router)
@@ -50,7 +50,7 @@ if config.cors_origins:
         allow_origins=config.cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
-        allow_headers=["*"]
+        allow_headers=["*"],
     )
 
 

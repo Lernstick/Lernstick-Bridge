@@ -1,7 +1,7 @@
-'''
+"""
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
-'''
+"""
 import enum
 import os.path
 from tempfile import TemporaryDirectory
@@ -16,10 +16,7 @@ from urllib3.util import Retry
 
 from lernstick_bridge.config import config
 
-_retries = Retry(
-    total=config.retry_attempts,
-    status_forcelist=[500, 502, 504]
-)
+_retries = Retry(total=config.retry_attempts, status_forcelist=[500, 502, 504])
 
 
 class RetrySession(Session):
@@ -27,10 +24,16 @@ class RetrySession(Session):
     requests Session that retries on [500,502,504] automatically.
     Retry interval can be specified in the bridge configuration.
     """
+
     _tmp_dir: Optional[TemporaryDirectory]  # type: ignore
 
-    def __init__(self, verify_cert: Optional[str] = None, verify: Optional[Union[bool, str]] = None, cert: Optional[Tuple[str, str]] = None,
-                 ignore_hostname: bool = False) -> None:
+    def __init__(
+        self,
+        verify_cert: Optional[str] = None,
+        verify: Optional[Union[bool, str]] = None,
+        cert: Optional[Tuple[str, str]] = None,
+        ignore_hostname: bool = False,
+    ) -> None:
         super().__init__()
         self._tmp_dir = None
         self.verify_cert = verify_cert
@@ -79,12 +82,18 @@ class RedisStream:
     """
     Simple stream m -> n implementation using Redis
     """
+
     redis_instance: Redis  # type:ignore[type-arg]
     stream_key: str
     max_messages: Optional[int]
     _last_id: Optional[str]
 
-    def __init__(self, stream_key: str, connection_pool: ConnectionPool, max_messages: Optional[int] = None):
+    def __init__(
+        self,
+        stream_key: str,
+        connection_pool: ConnectionPool,
+        max_messages: Optional[int] = None,
+    ):
         """
         Constructs a new RedisStream.
 
@@ -137,8 +146,13 @@ class HostNameIgnoreAdapter(HTTPAdapter):
     It is required because in most cases we don't know the hostname during certificate generation.
     """
 
-    def init_poolmanager(self, connections: Any, maxsize: int, block: bool = requests.adapters.DEFAULT_POOLBLOCK,
-                         **pool_kwargs: Any) -> None:
+    def init_poolmanager(
+        self,
+        connections: Any,
+        maxsize: int,
+        block: bool = requests.adapters.DEFAULT_POOLBLOCK,
+        **pool_kwargs: Any,
+    ) -> None:
         """Initializes a urllib3 PoolManager with assert_hostname set to False.
 
         This method should not be called from user code, and is only
@@ -155,15 +169,19 @@ class HostNameIgnoreAdapter(HTTPAdapter):
         self._pool_maxsize = maxsize
         self._pool_block = block
 
-        self.poolmanager = PoolManager(num_pools=connections,
-                                       maxsize=maxsize,
-                                       block=block,
-                                       strict=True,
-                                       assert_hostname=False, **pool_kwargs)
+        self.poolmanager = PoolManager(
+            num_pools=connections,
+            maxsize=maxsize,
+            block=block,
+            strict=True,
+            assert_hostname=False,
+            **pool_kwargs,
+        )
 
 
 class Flag(enum.Enum):
     """
     Flag that is used by the SQL layer to implement exclusive flag entries.
     """
+
     SET = True

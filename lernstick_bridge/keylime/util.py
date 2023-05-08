@@ -1,8 +1,8 @@
-'''
+"""
 SPDX-License-Identifier: Apache-2.0
 Copyright 2017 Massachusetts Institute of Technology.
 Copyrigyt 2021 Thore Sommer
-'''
+"""
 # Keylime specific crypto and other utility functions.
 # Some code is nearly the same as in Keylime which is Apache 2.0
 import base64
@@ -96,8 +96,7 @@ def _encrypt(input_data: str, key: bytes) -> str:
     :return: Then encrypted input base64 encoded
     """
     iv = generate_random_key(AES_BLOCK_SIZE)
-    encryptor = Cipher(algorithms.AES(key), modes.GCM(
-        iv, None, None), backend=default_backend()).encryptor()
+    encryptor = Cipher(algorithms.AES(key), modes.GCM(iv, None, None), backend=default_backend()).encryptor()
     encrypted_input = encryptor.update(input_data.encode("ascii")) + encryptor.finalize()
     return base64.b64encode(iv + encrypted_input + encryptor.tag).decode("utf-8")  # type: ignore
 
@@ -113,11 +112,14 @@ def rsa_encrypt(key: Any, message: bytes) -> bytes:
     :param message: to encrypt
     :return: encrypted message
     """
-    return key.encrypt(bytes(message),
-                       cryptography.hazmat.primitives.asymmetric.padding.OAEP(
-                           mgf=cryptography.hazmat.primitives.asymmetric.padding.MGF1(algorithm=hashes.SHA1()),
-                           algorithm=hashes.SHA1(),
-                           label=None))
+    return key.encrypt(
+        bytes(message),
+        cryptography.hazmat.primitives.asymmetric.padding.OAEP(
+            mgf=cryptography.hazmat.primitives.asymmetric.padding.MGF1(algorithm=hashes.SHA1()),
+            algorithm=hashes.SHA1(),
+            label=None,
+        ),
+    )
 
 
 def generate_mask(used_pcrs: Optional[List[int]], measured_boot: bool = True, ima: bool = True) -> str:
@@ -142,8 +144,7 @@ def generate_mask(used_pcrs: Optional[List[int]], measured_boot: bool = True, im
     return hex(out)
 
 
-def data_extend(data: bytes, hash_alg: Optional[str] = "sha256") \
-        -> Optional[str]:
+def data_extend(data: bytes, hash_alg: Optional[str] = "sha256") -> Optional[str]:
     """
     Calculates the PCR extend from a reset with the hash of data.
 

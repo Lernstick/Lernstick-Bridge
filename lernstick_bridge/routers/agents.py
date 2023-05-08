@@ -1,7 +1,7 @@
-'''
+"""
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
-'''
+"""
 import base64
 from typing import Annotated, Any, Dict, List
 
@@ -29,9 +29,21 @@ def list_agents(db: Session = Depends(get_db)) -> List[bridge.Agent]:
     return crud.get_agents(db)
 
 
-@router.post("/agents", response_model=bridge.Agent, tags=["agent_management"],
-             responses={409: {"model": bridge.HTTPError, "description": "Agent was already in the database"},
-                        412: {"model": bridge.HTTPError, "description": "EK of the agent couldn't be validated."}})
+@router.post(
+    "/agents",
+    response_model=bridge.Agent,
+    tags=["agent_management"],
+    responses={
+        409: {
+            "model": bridge.HTTPError,
+            "description": "Agent was already in the database",
+        },
+        412: {
+            "model": bridge.HTTPError,
+            "description": "EK of the agent couldn't be validated.",
+        },
+    },
+)
 def create_agent(agent: bridge.AgentCreate, db: Session = Depends(get_db)) -> bridge.Agent:
     """
     Create a new agent at the bridge.
@@ -50,9 +62,17 @@ def create_agent(agent: bridge.AgentCreate, db: Session = Depends(get_db)) -> br
     return crud.add_agent(db, agent)
 
 
-@router.delete("/agents/{agent_id}", tags=["agent_management"],
-               responses={404: {"model": bridge.HTTPError, "description": "Agent is not in the database"},
-                          500: {"model": bridge.HTTPError, "description": "Agent could not be deactivated before deletion"}})
+@router.delete(
+    "/agents/{agent_id}",
+    tags=["agent_management"],
+    responses={
+        404: {"model": bridge.HTTPError, "description": "Agent is not in the database"},
+        500: {
+            "model": bridge.HTTPError,
+            "description": "Agent could not be deactivated before deletion",
+        },
+    },
+)
 def delete_agent(agent_id: str, db: Session = Depends(get_db)) -> Dict[Any, Any]:
     """
     Delete a agent from the bridge.
@@ -72,8 +92,11 @@ def delete_agent(agent_id: str, db: Session = Depends(get_db)) -> Dict[Any, Any]
     return {}
 
 
-@router.put("/agents/{agent_id}", tags=["agent_management"],
-            responses={404: {"model": bridge.HTTPError, "description": "Agent is not in the database"}})
+@router.put(
+    "/agents/{agent_id}",
+    tags=["agent_management"],
+    responses={404: {"model": bridge.HTTPError, "description": "Agent is not in the database"}},
+)
 def update_agent(agent_id: str, agent: bridge.Agent, db: Session = Depends(get_db)) -> Dict[Any, Any]:
     """
     Update an agent at the bridge.
@@ -89,9 +112,14 @@ def update_agent(agent_id: str, agent: bridge.Agent, db: Session = Depends(get_d
     return {}
 
 
-@router.put("/agents/{agent_id}/activate", tags=["agent_attestation"],
-             responses={400: {"model": bridge.HTTPError, "description": "Agent couldn't be activated"},
-                        409: {"model": bridge.HTTPError, "description": "Agent already active"}})
+@router.put(
+    "/agents/{agent_id}/activate",
+    tags=["agent_attestation"],
+    responses={
+        400: {"model": bridge.HTTPError, "description": "Agent couldn't be activated"},
+        409: {"model": bridge.HTTPError, "description": "Agent already active"},
+    },
+)
 def activate_agent(agent_id: str, db: Session = Depends(get_db)) -> Dict[Any, Any]:
     """
     Activate agent at the bridge.
@@ -110,8 +138,17 @@ def activate_agent(agent_id: str, db: Session = Depends(get_db)) -> Dict[Any, An
     return {}
 
 
-@router.get("/agents/{agent_id}/status", response_model=bridge.AgentStatus, tags=["agent_attestation"],
-            responses={404: {"model": bridge.HTTPError, "description": "Agent not active nor in the database"}})
+@router.get(
+    "/agents/{agent_id}/status",
+    response_model=bridge.AgentStatus,
+    tags=["agent_attestation"],
+    responses={
+        404: {
+            "model": bridge.HTTPError,
+            "description": "Agent not active nor in the database",
+        }
+    },
+)
 def agent_status(agent_id: str, db: Session = Depends(get_db)) -> bridge.AgentStatus:
     """
     Get the agent status at the bridge.
@@ -137,9 +174,20 @@ def agent_status(agent_id: str, db: Session = Depends(get_db)) -> bridge.AgentSt
     raise HTTPException(status_code=404, detail="Agent not active nor in the database")
 
 
-@router.put("/agents/{agent_id}/deactivate", tags=["agent_attestation"],
-             responses={404: {"model": bridge.HTTPError, "description": "Agent not found in active database"},
-                        500: {"model": bridge.HTTPError, "description": "Deactivation was not successful"}})
+@router.put(
+    "/agents/{agent_id}/deactivate",
+    tags=["agent_attestation"],
+    responses={
+        404: {
+            "model": bridge.HTTPError,
+            "description": "Agent not found in active database",
+        },
+        500: {
+            "model": bridge.HTTPError,
+            "description": "Deactivation was not successful",
+        },
+    },
+)
 def deactivate_agent(agent_id: str, db: Session = Depends(get_db)) -> Dict[Any, Any]:
     """
     Deactivate agent at the bridge.
@@ -155,9 +203,21 @@ def deactivate_agent(agent_id: str, db: Session = Depends(get_db)) -> Dict[Any, 
     raise HTTPException(status_code=500, detail="Deactivation was not successful")
 
 
-@router.put("/agents/{agent_id}/verify", response_model=bridge.Token, tags=["agent_attestation"],
-            responses={404: {"model": bridge.HTTPError, "description": "Token does not belong to any agent"},
-                       409: {"model": bridge.HTTPError, "description": "Token does not belong to this agent"}})
+@router.put(
+    "/agents/{agent_id}/verify",
+    response_model=bridge.Token,
+    tags=["agent_attestation"],
+    responses={
+        404: {
+            "model": bridge.HTTPError,
+            "description": "Token does not belong to any agent",
+        },
+        409: {
+            "model": bridge.HTTPError,
+            "description": "Token does not belong to this agent",
+        },
+    },
+)
 def verify_token(agent_id: str, token: bridge.TokenVerify, db: Session = Depends(get_db)) -> bridge.Token:
     """
     Verify token to check if it belongs to the provided agent.
@@ -175,7 +235,11 @@ def verify_token(agent_id: str, token: bridge.TokenVerify, db: Session = Depends
     return db_token
 
 
-@router.get("/agents/active", response_model=List[bridge.ActiveAgent], tags=["agent_attestation"])
+@router.get(
+    "/agents/active",
+    response_model=List[bridge.ActiveAgent],
+    tags=["agent_attestation"],
+)
 def list_active_agents(db: Session = Depends(get_db)) -> List[bridge.ActiveAgent]:
     """
     List active agents at the bridge.

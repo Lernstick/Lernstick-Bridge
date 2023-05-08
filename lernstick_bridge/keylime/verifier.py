@@ -1,7 +1,7 @@
-'''
+"""
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
-'''
+"""
 from typing import Any, Dict, Optional
 
 import requests
@@ -11,9 +11,11 @@ from lernstick_bridge.config import VERIFIER_URL, config
 from lernstick_bridge.schema.keylime import AgentState, AgentVerifierRequest
 from lernstick_bridge.utils import RetrySession
 
-session = RetrySession(cert=(config.verifier.tls_cert, config.verifier.tls_priv_key),
-                       verify=config.verifier.ca_cert,
-                       ignore_hostname=True)
+session = RetrySession(
+    cert=(config.verifier.tls_cert, config.verifier.tls_priv_key),
+    verify=config.verifier.ca_cert,
+    ignore_hostname=True,
+)
 
 
 def add_agent(agent_id: str, verifier_request: AgentVerifierRequest) -> bool:
@@ -26,7 +28,11 @@ def add_agent(agent_id: str, verifier_request: AgentVerifierRequest) -> bool:
     """
     try:
         headers = {"Content-type": "application/json", "Accept": "text/plain"}
-        res = session.post(f"{VERIFIER_URL}/agents/{agent_id}", data=verifier_request.json(), headers=headers)
+        res = session.post(
+            f"{VERIFIER_URL}/agents/{agent_id}",
+            data=verifier_request.json(),
+            headers=headers,
+        )
         return res.status_code == 200
     except requests.exceptions.RequestException as e:
         logger.error(f"Couldn't add agent from verifier: {e}")
@@ -66,7 +72,7 @@ def get_agent_state(agent_id: str) -> AgentState:
         operational_state=agent_data["operational_state"],
         last_event_id=agent_data["last_event_id"],
         attestation_count=agent_data["attestation_count"],
-        severity_level=agent_data["severity_level"]
+        severity_level=agent_data["severity_level"],
     )
 
 

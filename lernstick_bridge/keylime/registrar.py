@@ -1,7 +1,7 @@
-'''
+"""
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
-'''
+"""
 
 from typing import List, Optional
 
@@ -12,9 +12,12 @@ from lernstick_bridge.config import REGISTRAR_URL, config
 from lernstick_bridge.schema.keylime import AgentRegistrar
 from lernstick_bridge.utils import RetrySession
 
-session = RetrySession(cert=(config.registrar.tls_cert, config.registrar.tls_priv_key),
-                       verify=config.registrar.ca_cert,
-                       ignore_hostname=True)
+session = RetrySession(
+    cert=(config.registrar.tls_cert, config.registrar.tls_priv_key),
+    verify=config.registrar.ca_cert,
+    ignore_hostname=True,
+)
+
 
 def get_agent(agent_id: str) -> Optional[AgentRegistrar]:
     """

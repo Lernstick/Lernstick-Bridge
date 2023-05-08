@@ -1,7 +1,7 @@
-'''
+"""
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
-'''
+"""
 # pylint: disable=too-few-public-methods
 import datetime
 from typing import Any, Dict, Optional
@@ -19,6 +19,7 @@ class Agent(BaseModel):
     """
     Agent model that is stored in the database.
     """
+
     agent_id: str  # Normally the hash of the ek_cert
     ek_cert: Optional[str]  # The hardware vendor cert for the TPM
     # BIOS & UEFI related PCRs should be in general stable
@@ -42,6 +43,7 @@ class AgentCreate(Agent):
     Agent model for adding an agent to the bridge.
     This requires the EK cert to be send.
     """
+
     ek_cert: str
 
 
@@ -49,6 +51,7 @@ class AgentStatus(BaseModel):
     """
     Agent status at the bridge and the state from the Keylime Verifier.
     """
+
     status: str
     token: Optional[str]
     state: Optional[AgentState]
@@ -58,6 +61,7 @@ class ActiveAgent(BaseModel):
     """
     Active agent model.
     """
+
     agent_id: str
     token: str
     timeout: Optional[datetime.datetime]
@@ -68,6 +72,7 @@ class ActiveAgent(BaseModel):
 
 class Token(BaseModel):
     """Verification token."""
+
     agent_id: str
     token: str = Field(default_factory=util.get_random_nonce)
 
@@ -86,8 +91,10 @@ class Token(BaseModel):
     class Config:  # pylint: disable=missing-class-docstring
         orm_mode = True
 
+
 class TokenVerify(BaseModel):
     """Token submitted for verification to the bridge"""
+
     token: str
 
 
@@ -95,6 +102,7 @@ class RevocationMessage(BaseModel):
     """
     Revocation message sent to exam systems via SSE.
     """
+
     agent_id: str
     event_id: Optional[str]
     severity_label: Optional[str]
@@ -108,16 +116,19 @@ class RevocationMessage(BaseModel):
         :param revocation_msg: RevocationMsg sent by Keylime
         :return: RevocationMessage that is sent by the Bridge
         """
-        return RevocationMessage(agent_id=revocation_msg.agent_id,
-                                 event_id=revocation_msg.event_id,
-                                 severity_label=revocation_msg.severity_label,
-                                 context=revocation_msg.context)
+        return RevocationMessage(
+            agent_id=revocation_msg.agent_id,
+            event_id=revocation_msg.event_id,
+            severity_label=revocation_msg.severity_label,
+            context=revocation_msg.context,
+        )
 
 
 class KeylimePolicyGetter(GetterDict):
     """
     Getter that converts flag into boolean for KeylimePolicy.
     """
+
     def get(self, key: Any, default: Any = None) -> Any:
         """
         If key is "active" it checks if the flag is set and converts it to a boolean.
@@ -138,6 +149,7 @@ class KeylimePolicy(BaseModel):
 
     Note: The ORM model is slightly different, due how we enforce that only one policy can be active at the time
     """
+
     policy_id: str
     active: bool
     runtime_policy: Optional[Dict[str, Any]]
@@ -153,6 +165,7 @@ class KeylimePolicyAdd(BaseModel):
     KeylimePolicy object for adding the configuration to the bridge.
     It excludes the active option, because all policies are inactive by default.
     """
+
     policy_id: str
     runtime_policy: Optional[Dict[str, Any]]
     mb_refstate: Optional[Dict[Any, Any]]
@@ -173,6 +186,7 @@ class KeylimePolicyAdd(BaseModel):
 
 class HTTPError(BaseModel):
     """Class that is used for documenting HTTPExceptions"""
+
     detail: str
 
     class Config:  # pylint: disable=missing-class-docstring

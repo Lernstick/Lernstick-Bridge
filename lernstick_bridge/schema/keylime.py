@@ -1,7 +1,7 @@
-'''
+"""
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
-'''
+"""
 # pylint: disable=too-few-public-methods
 #  Objects needed to interact with the Keylime API
 
@@ -18,6 +18,7 @@ class AgentRegistrar(BaseModel):
     """
     Agent response object from the registrar.
     """
+
     aik_tpm: str
     ek_tpm: str
     ekcert: str
@@ -30,6 +31,7 @@ class AgentVerifierRequest(BaseModel):
     """
     Request for the verifier with defaults set from the configuration.
     """
+
     v: str
     cloudagent_ip: IPv4Address
     cloudagent_port: int
@@ -53,6 +55,7 @@ class RevocationMsg(BaseModel):
     """
     Revocation message data send by Keylime on agent failure.
     """
+
     type: str
     ip: IPv4Address
     agent_id: str
@@ -70,6 +73,7 @@ class RevocationResp(BaseModel):
     Revocation message send by Keylime on agent failure with an optional signature.
     We do not use the signature feature because we can trust the Keylime Verifier directly.
     """
+
     msg: Union[Json[RevocationMsg], RevocationMsg]  # pylint: disable=E1136
     signature: Optional[str]
 
@@ -78,6 +82,7 @@ class Payload(BaseModel):
     """
     Abstraction of the Payload that can be deployed to the agent.
     """
+
     k: bytes
     u: bytes
     v: bytes
@@ -89,6 +94,7 @@ class AgentState(BaseModel):
     """
     Useful state information returned by the verifier
     """
+
     operational_state: int
     attestation_count: int
     severity_level: Optional[int]

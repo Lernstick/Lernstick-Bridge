@@ -1,7 +1,7 @@
-'''
+"""
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
-'''
+"""
 
 import base64
 import copy
@@ -25,6 +25,7 @@ class AgentBridge(BaseModel):
     Agent class for doing common interactions with the agent during activation.
     In relaxed mode agent might be None.
     """
+
     strict: bool
     agent_id: str
     db: Session
@@ -42,7 +43,7 @@ class AgentBridge(BaseModel):
         """
         is_strict = values.get("strict")
         agent_id = values.get("agent_id")
-        assert agent_id and (is_strict is not None),  "Agent id and mode need to be added"
+        assert agent_id and (is_strict is not None), "Agent id and mode need to be added"
 
         registrar_data = registrar.get_agent(agent_id)
         assert registrar_data, "Didn't found agent in registrar"
@@ -102,7 +103,13 @@ class AgentBridge(BaseModel):
             token = Token(agent_id=self.agent_id)
             payload = token.to_payload()
             assert self.registrar_data
-            if agent.post_payload_u(self.agent_id, self.get_url(), payload, self.registrar_data.mtls_cert, self._pubkey):
+            if agent.post_payload_u(
+                self.agent_id,
+                self.get_url(),
+                payload,
+                self.registrar_data.mtls_cert,
+                self._pubkey,
+            ):
                 self._token = token
         return self._token
 

@@ -1,7 +1,7 @@
-'''
+"""
 SPDX-License-Identifier: AGPL-3.0-only
 Copyright 2021 Thore Sommer
-'''
+"""
 import json
 from typing import Annotated, Any, AsyncGenerator, AsyncIterator, Dict, List
 
@@ -24,7 +24,11 @@ _redis_pool = create_redis_pool(config.redis_host, config.redis_port)
 
 
 async def _get_stream() -> AsyncGenerator[RedisStream, None]:
-    stream = RedisStream("keylime", connection_pool=_redis_pool, max_messages=config.redis_max_revocation_messages)
+    stream = RedisStream(
+        "keylime",
+        connection_pool=_redis_pool,
+        max_messages=config.redis_max_revocation_messages,
+    )
     try:
         yield stream
     finally:
@@ -33,9 +37,9 @@ async def _get_stream() -> AsyncGenerator[RedisStream, None]:
 
 @router.post("/revocation", callbacks=callback_router.routes)
 async def post_revocation(
-        message: keylime.RevocationResp,
-        stream: Annotated[RedisStream, Depends(_get_stream)],
-        db: Session = Depends(get_db)
+    message: keylime.RevocationResp,
+    stream: Annotated[RedisStream, Depends(_get_stream)],
+    db: Session = Depends(get_db),
 ) -> bool:
     """
     Webhook entry point for Keylime to call for revocation messages.
@@ -96,8 +100,17 @@ def list_keylime_policies(db: Session = Depends(get_db)) -> List[bridge.KeylimeP
     return crud.get_keylime_policies(db)
 
 
-@router.get("/policy/{policy_id}", response_model=bridge.KeylimePolicy, tags=["keylime"],
-            responses={404: {"model": bridge.HTTPError, "description": "If the Keylime policy cannot be found"}})
+@router.get(
+    "/policy/{policy_id}",
+    response_model=bridge.KeylimePolicy,
+    tags=["keylime"],
+    responses={
+        404: {
+            "model": bridge.HTTPError,
+            "description": "If the Keylime policy cannot be found",
+        }
+    },
+)
 def get_keylime_policy(policy_id: str, db: Session = Depends(get_db)) -> bridge.KeylimePolicy:
     """
     Gets the Keylime policy by id.
@@ -112,9 +125,17 @@ def get_keylime_policy(policy_id: str, db: Session = Depends(get_db)) -> bridge.
     return keylime_policy
 
 
-@router.post("/policy", tags=["keylime"],
-             response_model=bridge.KeylimePolicy,
-             responses={409: {"model": bridge.HTTPError, "description": "Keylime policy is already in the database"}})
+@router.post(
+    "/policy",
+    tags=["keylime"],
+    response_model=bridge.KeylimePolicy,
+    responses={
+        409: {
+            "model": bridge.HTTPError,
+            "description": "Keylime policy is already in the database",
+        }
+    },
+)
 def add_keylime_policy(keylime_policy: bridge.KeylimePolicyAdd, db: Session = Depends(get_db)) -> bridge.KeylimePolicy:
     """
     Add Keylime policy to the bridge.
@@ -130,9 +151,17 @@ def add_keylime_policy(keylime_policy: bridge.KeylimePolicyAdd, db: Session = De
     return added_keylime_policy
 
 
-@router.delete("/policy/{policy_id}", tags=["keylime"],
-             response_model=Dict[Any, Any],
-             responses={404: {"model": bridge.HTTPError, "description": "If policy is not in the database"}})
+@router.delete(
+    "/policy/{policy_id}",
+    tags=["keylime"],
+    response_model=Dict[Any, Any],
+    responses={
+        404: {
+            "model": bridge.HTTPError,
+            "description": "If policy is not in the database",
+        }
+    },
+)
 def delete_keylime_policy(policy_id: str, db: Session = Depends(get_db)) -> Dict[Any, Any]:
     """
     Delete a keylime policy.
@@ -147,9 +176,17 @@ def delete_keylime_policy(policy_id: str, db: Session = Depends(get_db)) -> Dict
     return {}
 
 
-@router.put("/policy/{policy_id}/activate", tags=["keylime"],
-            response_model=Dict[Any, Any],
-            responses={404: {"model": bridge.HTTPError, "description": "If policy is not in the database"}})
+@router.put(
+    "/policy/{policy_id}/activate",
+    tags=["keylime"],
+    response_model=Dict[Any, Any],
+    responses={
+        404: {
+            "model": bridge.HTTPError,
+            "description": "If policy is not in the database",
+        }
+    },
+)
 def activate_keylime_policy(policy_id: str, db: Session = Depends(get_db)) -> Dict[Any, Any]:
     """
     Activate Keylime policy. The old active policy gets deactivated.
@@ -167,9 +204,16 @@ def activate_keylime_policy(policy_id: str, db: Session = Depends(get_db)) -> Di
     return {}
 
 
-@router.put("/policy/{policy_id}/deactivate",
-            response_model=Dict[Any, Any],
-            responses={404: {"model": bridge.HTTPError, "description": "If policy is not in the database"}})
+@router.put(
+    "/policy/{policy_id}/deactivate",
+    response_model=Dict[Any, Any],
+    responses={
+        404: {
+            "model": bridge.HTTPError,
+            "description": "If policy is not in the database",
+        }
+    },
+)
 def deactivate_keylime_policy(policy_id: str, db: Session = Depends(get_db)) -> Dict[Any, Any]:
     """
     Deactivate Keylime policy.

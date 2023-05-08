@@ -1,7 +1,7 @@
-'''
+"""
 SPDX-License-Identifier: Apache-2.0
 Copyright 2021 Thore Sommer
-'''
+"""
 # This module is Apache-2.0 licensed to make it easier to integrate this code into Keylime
 
 import glob
@@ -9,8 +9,15 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from OpenSSL.crypto import (FILETYPE_ASN1, FILETYPE_PEM, Error, X509Store, X509StoreContext,
-                            X509StoreContextError, load_certificate)
+from OpenSSL.crypto import (
+    FILETYPE_ASN1,
+    FILETYPE_PEM,
+    Error,
+    X509Store,
+    X509StoreContext,
+    X509StoreContextError,
+    load_certificate,
+)
 
 
 def validate_ek(ek_cert: bytes, cert_store: X509Store) -> bool:
