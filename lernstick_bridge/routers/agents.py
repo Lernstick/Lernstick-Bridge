@@ -158,7 +158,7 @@ def deactivate_agent(agent_id: str, db: Session = Depends(get_db)) -> Dict[Any, 
 @router.put("/agents/{agent_id}/verify", response_model=bridge.Token, tags=["agent_attestation"],
             responses={404: {"model": bridge.HTTPError, "description": "Token does not belong to any agent"},
                        409: {"model": bridge.HTTPError, "description": "Token does not belong to this agent"}})
-def verify_token(agent_id: str, token: Annotated[str, Body()], db: Session = Depends(get_db)) -> bridge.Token:
+def verify_token(agent_id: str, token: bridge.TokenVerify, db: Session = Depends(get_db)) -> bridge.Token:
     """
     Verify token to check if it belongs to the provided agent.
 
@@ -167,7 +167,7 @@ def verify_token(agent_id: str, token: Annotated[str, Body()], db: Session = Dep
     :param db: Session to DB
     :return: Token with agent UUID if the token exits
     """
-    db_token = crud.get_token(db, token)
+    db_token = crud.get_token(db, token.token)
     if not db_token:
         raise HTTPException(status_code=404, detail="Token does not belong to any agent")
     if db_token.agent_id != agent_id:

@@ -86,6 +86,10 @@ class Token(BaseModel):
     class Config:  # pylint: disable=missing-class-docstring
         orm_mode = True
 
+class TokenVerify(BaseModel):
+    """Token submitted for verification to the bridge"""
+    token: str
+
 
 class RevocationMessage(BaseModel):
     """
