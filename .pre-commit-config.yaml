@@ -17,11 +17,3 @@ repos:
     rev: 23.1.0
     hooks:
       - id: black
-  - repo: local
-    hooks:
-    - id: tox
-      name: Run mypy and pylint
-      entry: tox
-      language: system
-      pass_filenames: false
-      types: [python]
