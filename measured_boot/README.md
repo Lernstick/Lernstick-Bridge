@@ -2,7 +2,7 @@
 The Lernstick Bridge supports measured boot by providing a custom test module for Keylime and a tool to extract the 
 necessary information.
 
-## Generating the policy
+## Generating the policy (including also IMA)
 To generate a policy from a lernstick ISO run as root:
 ```
 lernstick2policy.py /path/to/lernstick.iso > /path/to/policy.json
