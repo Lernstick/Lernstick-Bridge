@@ -130,7 +130,7 @@ class AgentBridge(BaseModel):
             cloudagent_ip=self.registrar_data.ip,
             cloudagent_port=self.registrar_data.port,
             tpm_policy=json.dumps(self._get_tpm_policy()),
-            runtime_policy=json.dumps(runtime_policy),
+            runtime_policy=base64.b64encode(json.dumps(runtime_policy).encode("utf-8")),
             mb_refstate=json.dumps(mb_refstate),
             ak_tpm=self.registrar_data.aik_tpm,
             mtls_cert=self.registrar_data.mtls_cert,
