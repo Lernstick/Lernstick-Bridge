@@ -28,7 +28,8 @@ class LernstickPolicy(policies.Policy):
     # default live-boot configuration
     default_append = "boot=live nonetworking config persistence-encryption=luks,none lernstick_efi_boot noeject"
     # live-media settings
-    live_media = ["", " live-media=removable live-media-timeout=10", " live-media=usb live-media-timeout=10"]
+    live_media = ["", " live-media=removable live-media-timeout=10", " live-media=usb live-media-timeout=10",
+                  r" live-media=/dev/disk/by-uuid/([^\s]+)"]
     # persistence setup
     persistence_media = ["", " persistence-media=removable"]
     persistence = ["", " persistence", " persistence persistence-read-only"]
@@ -39,7 +40,7 @@ class LernstickPolicy(policies.Policy):
     kernel_cmd_regex = f"/live/vmlinuz {default_append} locales=({'|'.join(locales)})" \
                        f" keyboard-layouts=({'|'.join(keyboard_layouts)}) desktop=({'|'.join(desktops)})" \
                        f"({'|'.join(live_media)})({'|'.join(persistence_media)})({'|'.join(persistence)})" \
-                       f"({'|'.join(swap)})({'|'.join(quiet)}) custom_options"
+                       f"({'|'.join(swap)})({'|'.join(quiet)})"
 
     def get_relevant_pcrs(self) -> typing.FrozenSet[int]:
         return self.relevant_pcrs
@@ -179,11 +180,17 @@ class LernstickPolicy(policies.Policy):
 
         dispatcher.set((9, 'EV_IPL'), tests.Or(*grub_tests, grub_cfg, vmlinuz, initrd))
 
+        # Build full kernel commandline regex with dm-verity ref value
+        if "roothash" in refstate:
+            kernel_cmd_regex = f"{self.kernel_cmd_regex} dm-verity-root-hash=filesystem.squashfs:{refstate['roothash']} dm-verity-oncorruption=restart custom_options"
+        else:
+            kernel_cmd_regex = f"{self.kernel_cmd_regex} custom_options"
+
         # Allow all Grub commands to be run and validate the kernel command line
         dispatcher.set((8, 'EV_IPL'), tests.FieldTest('Event', tests.FieldTest('String', tests.Or(
             tests.RegExp('grub_cmd: .*', re.DOTALL),
             tests.And(
-                tests.RegExp(f'kernel_cmdline: {self.kernel_cmd_regex}'))
+                tests.RegExp(f'kernel_cmdline: {kernel_cmd_regex}'))
         ))))
 
         dispatcher.set((5, 'EV_EFI_ACTION'), tests.AcceptAll())

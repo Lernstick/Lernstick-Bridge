@@ -181,6 +181,11 @@ def main():
                 initrmafs_hashes = hash_initramfs(f'{iso_dir}/live/initrd.img', init_dir)
                 merge_dict(initrmafs_hashes, hash_list)
 
+            root_hash_path = f'{iso_dir}/live/filesystem.squashfs.roothash.orig'
+            if os.path.exists(root_hash_path):
+                with open(f'{iso_dir}/live/filesystem.squashfs.roothash.orig', 'r', encoding="utf-8") as f:
+                    policy['roothash'] = f.read()
+
             policy['grub_files'] = extract_grub_files(iso_dir)
             policy['kernel'] = extract_kernel_hashes(iso_dir)
             policy['boot'] = extract_boot_hashes(list(glob.glob(f"{efi_img_dir}/EFI/boot/*") + [f"{iso_dir}/live/vmlinuz"]))
@@ -200,7 +205,7 @@ def main():
             unmount(efi_img_dir)
             unmount(squash_dir)
             if args.include_initramfs:
-                unmount(init_dir)
+                unmount(init_dir, False)
             unmount(iso_dir)
 
         except Exception as e:
