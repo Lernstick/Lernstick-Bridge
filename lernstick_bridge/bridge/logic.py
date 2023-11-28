@@ -126,7 +126,7 @@ def _strict_deactivate_agent(db: Session, agent_id: str) -> bool:
 
     verifier.delete_agent(agent_id)
     crud.delete_active_agent(db, agent_id)
-    logger.error(f"Agent {agent_id} was deactivated.")
+    logger.info(f"Agent {agent_id} was deactivated.")
     return True
 
 
