@@ -154,6 +154,7 @@ def main():
     parser.add_argument("--exclude", "-e", action='append', help="List of regexes to exclude")
     parser.add_argument("--include-initramfs", action="store_true", help="Include hashes for IMA from initramfs")
     parser.add_argument("--include-squashfs", action="store_true", help="Include hashes for IMA from squashfs")
+    parser.add_argument("--include-modules", action="store_true", help="Add kernel modules to IMA hashes" )
     parser.add_argument("lernstickISO")
     parser.add_argument("output", help="Path for the policy to store")
     args = parser.parse_args()
@@ -195,6 +196,11 @@ def main():
                 hashes = hash_files(squash_dir)
                 merge_dict(hashes, hash_list)
 
+            if args.include_modules:
+                hashes = hash_files(os.path.join(squash_dir, "usr", "lib", "modules"), squash_dir)
+                merge_dict(hashes, hash_list)
+
+
             # Get ephemeral IMA key
             key_path = os.path.join(squash_dir, "etc/keys/x509_evm.der")
             if os.path.exists(key_path):
@@ -223,7 +229,7 @@ def main():
             "generator": 0,
         },
         "release": 0,
-        "digests": {},
+        "digests": hash_list,
         "excludes": [],
         "keyrings": {},
         "ima": {"ignored_keyrings": [], "log_hash_alg": "sha1", "dm_policy": None},
@@ -234,6 +240,10 @@ def main():
     runtime_policy["excludes"].append("boot_aggregate")
     if args.exclude:
         runtime_policy["excludes"].extend(args.exclude)
+
+    # TEMP: add dynamically build modules to exclude list for now
+    if args.include_modules:
+        runtime_policy["excludes"].extend([r".*wl\.ko", ".*nvidia.*\.ko"])
 
     if args.key:
         keyids, pubkeys = parse_keys(args.key)
