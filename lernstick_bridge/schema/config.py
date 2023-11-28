@@ -73,7 +73,7 @@ class Config(BaseSettings):
 
     ip: IPv4Address = IPv4Address("127.0.0.1")
     port: int = 8080
-    keylime_api_entrypoint: str = "v2.0"
+    keylime_api_entrypoint: str = "v2.1"
     keylime_registrar: str = "https://localhost:8891"
     keylime_verifier: str = "https://localhost:8881"
     tpm_cert_store: Optional[Path] = None
